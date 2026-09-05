@@ -378,7 +378,9 @@ select{
   <div class="acts">
     <button class="btn" id="btnClear">Vider</button>
     <button class="btn" id="btnCopy">Copier la liste</button>
-    <button class="btn" id="btnSave">Enregistrer</button>
+    <button class="btn gold" id="btnShare">Partager</button>
+    <button class="btn" id="btnPublish">Publier</button>
+    <button class="btn" id="btnGallery">Galerie</button>
     <button class="btn gold" id="btnData" hidden>Cartes</button>
   </div>
 </header>
@@ -541,7 +543,25 @@ select{
       et le bouton parcourt tout le catalogue. Mis en cache, rafraîchi à chaque chargement.
     </div>
 
-        <div class="status" id="dataStatus"></div>
+        <h4>7 · Galerie publique (Supabase)</h4>
+    <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+    <input type="text" id="sbKey" placeholder="clé anon publique (eyJ…)" style="margin-top:6px">
+    <div class="row"><button class="btn gold" id="sbSave">Enregistrer la connexion</button></div>
+    <div class="hint">Voir le guide « galerie publique ». Ces deux valeurs sont publiques par nature.</div>
+
+    <div class="status" id="dataStatus"></div>
+  </div>
+</div>
+
+<!-- ---------- Galerie publique ---------- -->
+<div class="veil" id="galVeil" hidden>
+  <div class="panel">
+    <button class="closex" id="galClose" aria-label="Fermer">✕</button>
+    <h2>Galerie publique</h2>
+    <p>Les decks partagés par la communauté. Clique pour en charger un.</p>
+    <div id="galList" style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+      <div style="color:#6E6180;font-size:13px">Chargement…</div>
+    </div>
   </div>
 </div>
 
@@ -2015,6 +2035,7 @@ function refreshDeck(popId) {
   }
   updateGauge();
   refreshPoolQty();
+  try { store.set("dmo_deck", JSON.stringify({ name: $("#deckName").value, deck })); } catch (e) {}
 }
 
 /* ---------------- prix ---------------- */
@@ -2269,16 +2290,62 @@ $("#btnCopy").onclick = async () => {
   catch (e) { prompt("Copie la liste :", txt); }
 };
 
-$("#btnSave").onclick = () => {
-  const payload = { name: $("#deckName").value, deck, savedAt: Date.now() };
-  store.set("dmo_deck", JSON.stringify(payload));
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const a = el("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = ($("#deckName").value.trim() || "deck").replace(/\s+/g, "-") + ".json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast("Deck enregistré et téléchargé");
+/* ---------------- partage par lien ----------------
+   Le deck est encodé DANS l'URL : aucun stockage serveur.
+   On compresse les identifiants pour garder un lien court. */
+
+/* index stable de chaque carte, pour référencer par numéro plutôt que par nom */
+function cardOrdinal() {
+  if (!cardOrdinal._m) {
+    cardOrdinal._m = new Map();
+    CARDS.forEach((c, i) => cardOrdinal._m.set(c.id, i));
+  }
+  return cardOrdinal._m;
+}
+
+function encodeDeck() {
+  const ord = cardOrdinal();
+  const zone = (arr) => {
+    const counts = new Map();
+    for (const id of arr) counts.set(id, (counts.get(id) || 0) + 1);
+    return [...counts].map(([id, n]) => (ord.has(id) ? ord.get(id) + (n > 1 ? "x" + n : "") : "")).filter(Boolean).join(".");
+  };
+  const body = [zone(deck.main), zone(deck.extra), zone(deck.side)].join("~");
+  const name = encodeURIComponent($("#deckName").value.trim() || "Deck");
+  return "#d=" + name + "|" + body;
+}
+
+function decodeDeck(hash) {
+  try {
+    const m = hash.match(/#d=([^|]*)\|(.*)$/);
+    if (!m) return null;
+    const name = decodeURIComponent(m[1]);
+    const zones = m[2].split("~");
+    const parse = (str) => {
+      const out = [];
+      if (!str) return out;
+      for (const tok of str.split(".")) {
+        const [idx, n] = tok.split("x");
+        const card = CARDS[Number(idx)];
+        if (!card) continue;
+        for (let k = 0; k < (Number(n) || 1); k++) out.push(card.id);
+      }
+      return out;
+    };
+    return { name, deck: { main: parse(zones[0]), extra: parse(zones[1]), side: parse(zones[2]) } };
+  } catch (e) { return null; }
+}
+
+$("#btnShare").onclick = async () => {
+  if (!deck.main.length && !deck.extra.length && !deck.side.length)
+    return toast("Ajoute des cartes avant de partager.");
+  const link = location.origin + location.pathname + encodeDeck();
+  try {
+    await navigator.clipboard.writeText(link);
+    toast("Lien de partage copié dans le presse-papiers");
+  } catch (e) {
+    prompt("Copie ce lien pour partager ton deck :", link);
+  }
 };
 
 $("#btnClear").onclick = () => {
@@ -2621,6 +2688,114 @@ async function loadPricesQuietly() {
   if (total) { applyFilters(); refreshDeck(); cacheCards(); }
 }
 
+/* ---------------- galerie publique (Supabase) ---------------- */
+/* Supabase expose une API REST directe, appelable depuis le navigateur
+   sans CORS. Les clés anon sont publiques par conception ; c'est la
+   row-level security côté base qui protège les données. */
+
+const SUPABASE_URL = ""; // ← colle ici ton Project URL pour l'intégrer en dur
+const SUPABASE_KEY = ""; // ← et ta clé anon publique
+
+const sbUrl = () => (($("#sbUrl")?.value || "").trim() || SUPABASE_URL).replace(/\/+$/, "");
+const sbKey = () => ($("#sbKey")?.value || "").trim() || SUPABASE_KEY;
+const sbReady = () => sbUrl() && sbKey();
+
+function sbHeaders() {
+  return { apikey: sbKey(), Authorization: "Bearer " + sbKey(), "Content-Type": "application/json" };
+}
+
+$("#sbSave").onclick = () => {
+  if (!sbReady()) return setStatus("Renseigne l'URL et la clé.", "err");
+  store.set("dmo_sb_url", sbUrl());
+  store.set("dmo_sb_key", sbKey());
+  setStatus("Connexion galerie enregistrée.", "ok");
+};
+
+async function publishDeck() {
+  if (!sbReady()) return toast("Galerie non configurée (panneau admin).");
+  const total = deck.main.length + deck.extra.length + deck.side.length;
+  if (!total) return toast("Ajoute des cartes avant de publier.");
+
+  const author = (prompt("Ton pseudo (facultatif) :", "") || "Anonyme").slice(0, 40);
+  const row = {
+    name: ($("#deckName").value.trim() || "Deck").slice(0, 60),
+    author: author.trim() || "Anonyme",
+    code: encodeDeck().replace(/^#d=/, ""),
+    main_count: deck.main.length,
+  };
+  try {
+    const r = await fetch(sbUrl() + "/rest/v1/decks", {
+      method: "POST",
+      headers: { ...sbHeaders(), Prefer: "return=minimal" },
+      body: JSON.stringify(row),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    toast("Deck publié dans la galerie !");
+  } catch (e) {
+    toast("Échec de la publication : " + e.message);
+  }
+}
+
+async function openGallery() {
+  const veilG = $("#galVeil");
+  veilG.hidden = false;
+  const list = $("#galList");
+  if (!sbReady()) {
+    list.innerHTML = '<div style="color:#C0453C;font-size:13px">Galerie non configurée.</div>';
+    return;
+  }
+  list.innerHTML = '<div style="color:#6E6180;font-size:13px">Chargement…</div>';
+  try {
+    const r = await fetch(
+      sbUrl() + "/rest/v1/decks?select=*&order=created_at.desc&limit=60",
+      { headers: sbHeaders() }
+    );
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const rows = await r.json();
+    if (!rows.length) {
+      list.innerHTML = '<div style="color:#6E6180;font-size:13px">Aucun deck publié pour l\'instant. Sois le premier !</div>';
+      return;
+    }
+    list.innerHTML = "";
+    for (const d of rows) {
+      const card = el("div");
+      card.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 12px;"
+        + "background:#150F1D;border:1px solid #3A2E4A;border-radius:3px;cursor:pointer";
+      card.onmouseenter = () => (card.style.borderColor = "#7C6620");
+      card.onmouseleave = () => (card.style.borderColor = "#3A2E4A");
+      card.innerHTML =
+        '<div style="flex:1;min-width:0">'
+        + '<div style="font-family:Cinzel,serif;color:#F2D97A;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        + escapeHtml(d.name) + '</div>'
+        + '<div style="font-size:12px;color:#7E7191">par ' + escapeHtml(d.author || "Anonyme")
+        + ' · ' + (d.main_count || 0) + ' cartes</div></div>'
+        + '<span class="btn gold" style="padding:5px 12px;font-size:12px">Charger</span>';
+      card.onclick = () => {
+        const parsed = decodeDeck("#d=" + d.code);
+        if (!parsed) return toast("Deck illisible.");
+        deck = parsed.deck;
+        $("#deckName").value = parsed.name || d.name;
+        refreshDeck();
+        veilG.hidden = true;
+        toast("« " + d.name + " » chargé");
+      };
+      list.append(card);
+    }
+  } catch (e) {
+    list.innerHTML = '<div style="color:#C0453C;font-size:13px">Erreur : ' + e.message + '</div>';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+$("#btnPublish").onclick = publishDeck;
+$("#btnGallery").onclick = openGallery;
+$("#galClose").onclick = () => { $("#galVeil").hidden = true; };
+$("#galVeil").addEventListener("click", (e) => { if (e.target === $("#galVeil")) $("#galVeil").hidden = true; });
+
 /* ---------------- filtres live ---------------- */
 function setView(table) {
   $("#pool").classList.toggle("table", table);
@@ -2648,6 +2823,10 @@ $("#q").addEventListener("input", () => { clearTimeout(qT); qT = setTimeout(appl
   if (savedProxy && $("#proxyUrl")) $("#proxyUrl").value = savedProxy;
   loadPricesQuietly(); // prix en direct via le proxy intégré
 
+  const su = store.get("dmo_sb_url"), sk = store.get("dmo_sb_key");
+  if (su && $("#sbUrl")) $("#sbUrl").value = su;
+  if (sk && $("#sbKey")) $("#sbKey").value = sk;
+
   let loaded = false;
   const cached = store.get("dmo_cards");
   if (cached) {
@@ -2659,12 +2838,22 @@ $("#q").addEventListener("input", () => { clearTimeout(qT); qT = setTimeout(appl
      un premier passage interrompu ne doit pas geler l'affichage. */
   if (CARDS.some((c) => !c.img)) await enrich(true);
 
-  const savedDeck = store.get("dmo_deck");
-  if (savedDeck) {
-    try {
-      const p = JSON.parse(savedDeck);
-      if (p.deck) { deck = p.deck; $("#deckName").value = p.name || "Deck sans nom"; refreshDeck(); }
-    } catch (e) {}
+  /* Priorité au deck passé dans le lien ; sinon on restaure le brouillon local. */
+  const shared = location.hash.startsWith("#d=") ? decodeDeck(location.hash) : null;
+  if (shared) {
+    deck = shared.deck;
+    $("#deckName").value = shared.name;
+    refreshDeck();
+    toast("Deck ouvert depuis un lien partagé");
+    history.replaceState(null, "", location.pathname); // nettoie l'URL
+  } else {
+    const savedDeck = store.get("dmo_deck");
+    if (savedDeck) {
+      try {
+        const p = JSON.parse(savedDeck);
+        if (p.deck) { deck = p.deck; $("#deckName").value = p.name || "Deck sans nom"; refreshDeck(); }
+      } catch (e) {}
+    }
   }
 })();
 </script>
