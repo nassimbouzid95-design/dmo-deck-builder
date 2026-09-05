@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMO Deck Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17121F;
+  --ink-2:#1F1829;
+  --ink-3:#2A2036;
+  --mat:#2C1D3E;
+  --gold:#C9A227;
+  --gold-hi:#F2D97A;
+  --gold-dim:#7C6620;
+  --parch:#EDE3D0;
+  --parch-dim:#A99C87;
+  --danger:#C0453C;
+  --ok:#4E9E6A;
+
+  --f-normal:#C9A961;
+  --f-effect:#C2703C;
+  --f-ritual:#5C86C4;
+  --f-fusion:#8A5FA8;
+  --f-synchro:#D8D5CE;
+  --f-xyz:#171720;
+  --f-link:#2A5B96;
+  --f-spell:#12A38A;
+  --f-trap:#B2478A;
+
+  --gap:14px;
+  --r:3px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #2A1D3A 0%, transparent 60%),
+    var(--ink);
+  color:var(--parch);
+  font-family:"Barlow Semi Condensed",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.45;
+  overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3B2F4B;border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:#54426B}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+
+/* ---------- HUD ---------- */
+.hud{
+  display:flex;align-items:center;gap:18px;
+  padding:10px 18px;
+  border-bottom:1px solid #3A2E4A;
+  background:linear-gradient(#241B31,#1C1526);
+  height:60px;
+}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brand svg{width:26px;height:26px}
+.brand b{
+  font-family:Cinzel,serif;font-weight:700;font-size:17px;
+  letter-spacing:.06em;color:var(--gold-hi);
+}
+.brand span{color:var(--parch-dim);font-size:13px;letter-spacing:.04em}
+
+.deckname{
+  background:#150F1D;border:1px solid #3A2E4A;border-radius:var(--r);
+  padding:6px 10px;width:min(240px,26vw);
+  font-family:Cinzel,serif;font-size:14px;color:var(--gold-hi);
+}
+.deckname:focus{border-color:var(--gold-dim)}
+
+.gauge{display:flex;align-items:center;gap:12px;margin-left:auto;flex-shrink:0}
+.gpill{display:flex;flex-direction:column;align-items:flex-start;min-width:74px}
+.gpill em{font-style:normal;font-size:11px;letter-spacing:.09em;color:var(--parch-dim)}
+.gpill strong{font-family:Cinzel,serif;font-size:16px;line-height:1.1}
+.gpill.bad strong{color:var(--danger)}
+.gpill.good strong{color:var(--gold-hi)}
+
+.acts{display:flex;gap:6px;flex-shrink:0}
+.btn{
+  border:1px solid #4A3A5E;border-radius:var(--r);
+  padding:6px 11px;font-size:13px;color:var(--parch);
+  background:#251C33;transition:background .12s,border-color .12s;
+}
+.btn:hover{background:#31253F;border-color:var(--gold-dim)}
+.btn.gold{border-color:var(--gold-dim);color:var(--gold-hi)}
+.btn.gold:hover{background:#3A2E1A}
+
+/* ---------- Field ---------- */
+.field{
+  display:grid;
+  grid-template-columns:minmax(280px,1.05fr) minmax(360px,1.5fr) 268px;
+  height:calc(100vh - 60px);
+}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.col + .col{border-left:1px solid #322740}
+
+.colhead{
+  padding:9px 14px;border-bottom:1px solid #322740;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  background:#1C1526;
+}
+.colhead h2{
+  margin:0;font-family:Cinzel,serif;font-size:13px;font-weight:500;
+  letter-spacing:.1em;color:var(--gold);
+}
+.count{color:var(--parch-dim);font-size:13px;margin-left:auto}
+
+/* ---------- Pool ---------- */
+.filters{padding:10px 14px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #322740;flex-shrink:0}
+.search{
+  width:100%;background:#130E1B;border:1px solid #3A2E4A;border-radius:var(--r);
+  padding:8px 11px;font-size:14px;
+}
+.search::placeholder{color:#6E6180}
+.search:focus{border-color:var(--gold-dim)}
+.frow{display:flex;gap:6px;flex-wrap:wrap}
+select{
+  background:#130E1B;border:1px solid #3A2E4A;border-radius:var(--r);
+  padding:5px 7px;font-size:13px;flex:1;min-width:88px;
+}
+
+.grid{
+  flex:1;overflow-y:auto;padding:12px 14px 40px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+  gap:12px;align-content:start;align-items:start;
+}
+.deckgrid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+
+/* ---------- Card tile ---------- */
+/* La hauteur vient d'un bloc espaceur en pourcentage (86/59 = 145.8%).
+   aspect-ratio suffirait en théorie, mais il se fait écraser dès que la
+   tuile n'a aucun contenu en flux — ce qui est le cas avant l'arrivée
+   des visuels. Le padding-% ne dépend, lui, que de la largeur. */
+.tile{
+  position:relative;width:100%;border-radius:var(--r);
+  background:#0E0A14;border:1px solid #000;
+  overflow:hidden;cursor:pointer;user-select:none;
+  box-shadow:0 1px 4px rgba(0,0,0,.6);transition:transform .1s;
+}
+.tile::before{content:"";display:block;padding-top:145.8%}
+/* Filet de sécurité : même si le calcul en pourcentage échouait,
+   une tuile ne peut plus retomber à quelques pixels de haut. */
+.grid .tile{min-height:186px}
+.deckgrid .tile{min-height:108px}
+.thumb{position:absolute;inset:0;overflow:hidden}
+.tile img{
+  width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;
+}
+.tile .fallback{
+  position:absolute;inset:0;display:flex;z-index:0;align-items:center;justify-content:center;
+  text-align:center;padding:10px 7px;font-size:12.5px;line-height:1.3;font-weight:600;
+  color:#1A1208;text-shadow:0 1px 0 rgba(255,255,255,.3);overflow:hidden;
+  background:linear-gradient(155deg,var(--fc,#C9A961),rgba(0,0,0,.42));
+}
+.tile.dark .fallback{color:#E6E0D2;text-shadow:0 1px 2px #000}
+.deckgrid .fallback{font-size:10px;padding:6px 4px;line-height:1.2}
+.tile::after{
+  content:"";position:absolute;inset:0;border-radius:var(--r);
+  box-shadow:inset 0 0 0 2px var(--fc,#C9A961);opacity:.85;pointer-events:none;
+}
+.tile:hover{transform:translateY(-2px)}
+.tile.sel::after{box-shadow:inset 0 0 0 2px var(--gold-hi),0 0 12px rgba(242,217,122,.4)}
+.tile .qty{
+  position:absolute;right:4px;bottom:4px;
+  background:rgba(10,6,16,.92);border:1px solid var(--gold-dim);
+  color:var(--gold-hi);border-radius:2px;
+  font-family:Cinzel,serif;font-size:11px;line-height:1;padding:3px 5px;
+}
+.tile.maxed{filter:grayscale(.55) brightness(.6)}
+.tile.pop{animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.82)}to{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){
+  .tile,.tile.pop{animation:none;transition:none}
+}
+
+/* ---------- Pool en table ---------- */
+.poolhead{
+  display:none;align-items:center;gap:12px;flex-shrink:0;
+  padding:0 14px 0 0;height:34px;border-bottom:1px solid #322740;background:#1A1324;
+}
+.poolhead.on{display:flex}
+.poolhead span{font-size:11.5px;letter-spacing:.09em;color:var(--gold);white-space:nowrap}
+.poolhead .h-name{flex:1;min-width:0;padding-left:62px}
+.poolhead .h-type{flex:0 0 132px}
+.poolhead .h-rar{flex:0 0 96px}
+.poolhead .h-price{flex:0 0 76px;text-align:right}
+
+.rowinfo{display:none}
+.grid.table{display:block;padding:0 0 40px;gap:0}
+.grid.table .tile{
+  min-height:0;height:58px;width:100%;display:flex;align-items:center;
+  border:0;border-bottom:1px solid #241B31;border-radius:0;
+  background:transparent;box-shadow:none;
+}
+.grid.table .tile::before,
+.grid.table .tile::after{display:none}
+.grid.table .tile:hover{transform:none;background:#211830}
+.grid.table .tile.sel{background:#2A1F3C;box-shadow:inset 3px 0 0 var(--gold-hi)}
+.grid.table .thumb{
+  position:relative;inset:auto;flex:0 0 34px;width:34px;height:50px;margin:0 14px;
+  border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.7);
+}
+.grid.table .fallback{font-size:0;padding:0}
+.grid.table .rowinfo{
+  display:flex;align-items:center;flex:1;min-width:0;gap:12px;padding-right:14px;
+}
+.grid.table .r-name{
+  flex:1;min-width:0;font-size:14.5px;font-weight:600;color:#F0EAdc;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.grid.table .r-type{flex:0 0 132px;font-size:13.5px;color:#C3B9AA}
+.grid.table .r-type em{font-style:normal;font-size:12px;color:#7E7191;margin-left:5px}
+.grid.table .r-rar{flex:0 0 96px}
+.grid.table .r-price{
+  flex:0 0 76px;text-align:right;font-size:13px;color:var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+.grid.table .qty{
+  position:static;margin-left:10px;order:9;
+}
+.pill{
+  display:inline-block;padding:3px 10px;border-radius:11px;
+  font-size:12px;font-weight:600;line-height:1.25;
+}
+.r-common {background:rgba(138,127,153,.16);color:#A79BB8}
+.r-silver {background:rgba(198,203,212,.16);color:#C6CBD4}
+.r-gold   {background:rgba(224,184,74,.16); color:#E0B84A}
+.r-rainbow{background:linear-gradient(96deg,rgba(18,163,138,.22),rgba(178,71,138,.22));color:#63D9BE}
+.r-unknown{background:rgba(110,97,128,.16);color:#6E6180}
+
+@media (max-width:760px){
+  .grid.table .r-type,.poolhead .h-type{display:none}
+}
+
+/* ---------- Deck mat ---------- */
+.mat{
+  flex:1;overflow-y:auto;min-height:0;
+  background:
+    radial-gradient(560px 380px at 50% 20%, rgba(90,58,124,.30), transparent 70%),
+    #191223;
+  position:relative;
+}
+.mat::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='%23C9A227' stroke-width='2.5'><path d='M40 100c20-26 100-26 120 0-20 26-100 26-120 0z'/><circle cx='100' cy='100' r='17'/><path d='M100 62V44M100 156v-18M100 138l-14 22M118 118l26 10'/></g></svg>");
+  background-repeat:no-repeat;background-position:center 32%;background-size:340px;
+  opacity:.045;
+}
+.zone{padding:12px 16px 4px;position:relative}
+.zonehead{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.zonehead h3{
+  margin:0;font-family:Cinzel,serif;font-size:12px;font-weight:500;
+  letter-spacing:.13em;color:var(--gold);
+}
+.zonehead .num{font-size:13px;color:var(--parch-dim);font-variant-numeric:tabular-nums}
+.zonehead .num.bad{color:var(--danger)}
+.zonehead .bar{flex:1;height:2px;background:#372A47;position:relative;top:-2px}
+.zonehead .bar i{display:block;height:100%;background:var(--gold);width:0}
+.zonehead .bar i.bad{background:var(--danger)}
+.zonehead .cost{font-size:12.5px;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
+.zonehead .cost span{color:#7E7191}
+.dropzone{min-height:66px;border-radius:var(--r);transition:background .12s}
+.dropzone.over{background:rgba(201,162,39,.10);box-shadow:inset 0 0 0 1px var(--gold-dim)}
+.empty{
+  color:#6E6180;font-size:13px;padding:20px 4px;text-align:center;
+  border:1px dashed #3A2E4A;border-radius:var(--r);
+}
+
+/* ---------- Inspector ---------- */
+.inspect{padding:14px;overflow-y:auto;flex:1}
+.ipreview{
+  width:100%;border-radius:var(--r);
+  background:#0E0A14;border:1px solid #000;overflow:hidden;position:relative;
+  box-shadow:0 3px 14px rgba(0,0,0,.6);
+}
+.ipreview::before{content:"";display:block;padding-top:145.8%}
+.ipreview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ipreview .fallback{position:absolute;inset:0;padding:14px;font-size:15px;font-weight:600}
+.iname{
+  font-family:Cinzel,serif;font-size:17px;line-height:1.25;
+  margin:14px 0 4px;color:var(--gold-hi);
+}
+.imeta{font-size:13px;color:var(--parch-dim);margin-bottom:10px}
+.istats{display:flex;gap:14px;font-family:Cinzel,serif;font-size:14px;margin-bottom:10px}
+.idesc{
+  font-size:13.5px;line-height:1.5;color:#CFC4B2;white-space:pre-wrap;
+  border-top:1px solid #322740;padding-top:10px;
+}
+.iacts{display:flex;gap:6px;margin:12px 0}
+.iacts .btn{flex:1;text-align:center}
+.iempty{color:#6E6180;font-size:13px;text-align:center;padding:40px 10px}
+.credit{
+  padding:10px 14px;border-top:1px solid #322740;flex-shrink:0;
+  font-size:10.5px;line-height:1.5;color:#6E6180;
+}
+.credit a{color:#8C7AA8;text-decoration:none}
+.credit a:hover{text-decoration:underline}
+
+/* ---------- Setup / modal ---------- */
+.veil{
+  position:fixed;inset:0;background:rgba(9,6,14,.86);z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.veil[hidden]{display:none}
+.panel{
+  width:min(620px,100%);max-height:86vh;overflow-y:auto;
+  background:#1E1729;border:1px solid #4A3A5E;border-radius:5px;
+  padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+.panel h2{font-family:Cinzel,serif;font-size:20px;margin:0 0 6px;color:var(--gold-hi)}
+.panel p{color:var(--parch-dim);font-size:14px;margin:0 0 18px}
+.panel h4{font-family:Cinzel,serif;font-size:12px;letter-spacing:.1em;color:var(--gold);margin:20px 0 8px}
+.panel input[type=text],.panel textarea{
+  width:100%;background:#130E1B;border:1px solid #3A2E4A;border-radius:var(--r);
+  padding:8px 10px;font-size:13.5px;font-family:ui-monospace,monospace;
+}
+.panel textarea{min-height:110px;resize:vertical}
+.panel .row{display:flex;gap:8px;margin-top:8px}
+.hint{font-size:12.5px;color:#7E7191;margin-top:6px;line-height:1.5}
+.status{margin-top:14px;font-size:13.5px;min-height:20px}
+.status.err{color:var(--danger)}
+.status.ok{color:var(--ok)}
+.closex{float:right;color:var(--parch-dim);font-size:20px;line-height:1;margin:-6px -6px 0 0}
+
+.galpage{
+  position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #2A1D3A 0%, transparent 60%),
+    var(--ink);
+}
+.galpage[hidden]{display:none}
+.galtop{
+  display:flex;align-items:center;gap:16px;padding:12px 22px;
+  border-bottom:1px solid #3A2E4A;background:linear-gradient(#241B31,#1C1526);flex-shrink:0;
+}
+.galgrid{
+  flex:1;overflow-y:auto;padding:20px 22px 60px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;align-content:start;
+}
+.deckcard{
+  background:#1C1526;border:1px solid #3A2E4A;border-radius:5px;
+  padding:15px 17px;cursor:pointer;transition:border-color .12s,transform .1s;
+  display:flex;flex-direction:column;gap:12px;
+}
+.deckcard:hover{border-color:var(--gold-dim);transform:translateY(-2px)}
+.deckcard .dc-name{
+  font-family:Cinzel,serif;font-size:16px;color:var(--gold-hi);line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.deckcard .dc-author{font-size:12.5px;color:var(--parch-dim);margin-top:-6px}
+.deckcard .dc-stats{display:flex;gap:8px;flex-wrap:wrap}
+.dc-stat{
+  display:flex;flex-direction:column;align-items:center;min-width:52px;
+  background:#150F1D;border:1px solid #322740;border-radius:3px;padding:6px 4px;
+}
+.dc-stat b{font-family:Cinzel,serif;font-size:15px;line-height:1.1;color:var(--parch)}
+.dc-stat em{font-style:normal;font-size:10px;letter-spacing:.06em;color:#6E6180;margin-top:2px}
+.dc-stat.mon b{color:#C2703C}
+.dc-stat.spl b{color:#12A38A}
+.dc-stat.trp b{color:#B2478A}
+.dc-stat.cost b{color:var(--gold-hi)}
+.deckcard .dc-load{
+  border:1px solid var(--gold-dim);color:var(--gold-hi);background:#251C33;
+  border-radius:var(--r);padding:7px;text-align:center;font-size:13px;margin-top:2px;
+}
+.deckcard:hover .dc-load{background:#3A2E1A}
+.galempty{grid-column:1/-1;color:#6E6180;font-size:14px;text-align:center;padding:50px 20px}
+
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#2A2036;border:1px solid var(--gold-dim);color:var(--gold-hi);
+  padding:9px 16px;border-radius:var(--r);font-size:13.5px;z-index:60;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.toast.show{opacity:1}
+
+@media (max-width:1080px){
+  body{overflow:auto}
+  .field{grid-template-columns:1fr;height:auto}
+  .col{height:auto}
+  .col + .col{border-left:none;border-top:1px solid #322740}
+  .grid{max-height:52vh}
+  .hud{flex-wrap:wrap;height:auto;gap:10px}
+  .gauge{margin-left:0;order:3;width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="hud">
+  <div class="brand">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <g fill="none" stroke="#F2D97A" stroke-width="9" stroke-linecap="round">
+        <path d="M34 100c20-30 112-30 132 0-20 30-112 30-132 0z"/>
+        <circle cx="100" cy="100" r="19" fill="#F2D97A" stroke="none"/>
+      </g>
+    </svg>
+    <b>DMO</b><span data-i18n="subtitle">Deck Builder</span>
+  </div>
+  <button class="btn" id="btnLang" style="flex-shrink:0;font-size:12.5px;padding:5px 10px">EN</button>
+
+  <input class="deckname" id="deckName" value="Deck sans nom" aria-label="Nom du deck">
+
+  <div class="gauge">
+    <div class="gpill" id="gMain"><em data-i18n="main">Main</em><strong>0 / 40</strong></div>
+    <div class="gpill" id="gMon"><em data-i18n="monsters">Monstres</em><strong>0</strong></div>
+    <div class="gpill" id="gSpl"><em data-i18n="spells">Magies</em><strong>0</strong></div>
+    <div class="gpill" id="gTrp"><em data-i18n="traps">Pièges</em><strong>0</strong></div>
+    <div class="gpill" id="gCost"><em data-i18n="cost">Coût</em><strong>0 G</strong></div>
+  </div>
+
+  <div class="acts">
+    <button class="btn" id="btnClear" data-i18n="clear">Vider</button>
+    <button class="btn gold" id="btnShare" data-i18n="share">Partager</button>
+    <button class="btn" id="btnPublish" data-i18n="publish">Publier</button>
+    <button class="btn" id="btnGallery" data-i18n="gallery">Galerie</button>
+    <button class="btn gold" id="btnData" hidden>Cartes</button>
+  </div>
+</header>
+
+<main class="field">
+
+  <section class="col">
+    <div class="colhead">
+      <h2 data-i18n="pool">POOL</h2><span class="count" id="poolCount">—</span>
+      <button class="btn" id="btnView" title="Changer d'affichage"
+              style="padding:3px 10px;font-size:12.5px" data-i18n="viewTable">&#9776; Table</button>
+    </div>
+    <div class="filters">
+      <input class="search" id="q" placeholder="Chercher une carte…" data-i18n-ph="search" autocomplete="off">
+      <div class="frow">
+        <select id="fType"><option value="all" data-i18n="allTypes">Tous les types</option></select>
+        <select id="fRarity"><option value="all" data-i18n="allRar">Toutes raretés</option></select>
+      </div>
+      <div class="frow">
+        <select id="fAttr"><option value="all" data-i18n="allAttr">Tous attributs</option></select>
+        <select id="fSub"><option value="all" data-i18n="allSub">Tous sous-types</option></select>
+        <select id="fSort">
+          <option value="name" data-i18n="sortAz">Nom A→Z</option>
+          <option value="name-desc" data-i18n="sortZa">Nom Z→A</option>
+          <option value="type" data-i18n="sortType">Type</option>
+          <option value="level" data-i18n="sortLvl">Niveau ↓</option>
+          <option value="price" data-i18n="sortPriceDown">Prix ↓</option>
+          <option value="price-asc" data-i18n="sortPriceUp">Prix ↑</option>
+        </select>
+      </div>
+    </div>
+    <div class="poolhead" id="poolHead">
+      <span class="h-name" data-i18n="colCard">CARTE</span>
+      <span class="h-type" data-i18n="colType">TYPE</span>
+      <span class="h-rar" data-i18n="colRar">RARETÉ</span>
+      <span class="h-price" data-i18n="colPrice">PRIX</span>
+    </div>
+    <div class="grid" id="pool"></div>
+  </section>
+
+  <section class="col">
+    <div class="colhead"><h2 data-i18n="deck">DECK</h2><span class="count" id="deckCount">0 cartes</span></div>
+    <div class="mat" id="mat">
+
+      <div class="zone">
+        <div class="zonehead">
+          <h3 data-i18n="mainZone">MAIN</h3><span class="num" id="nMain">0 / 40–60</span>
+          <span class="bar"><i id="bMain"></i></span>
+          <span class="cost" id="cMain"></span>
+        </div>
+        <div class="grid deckgrid dropzone" id="zMain" data-zone="main"></div>
+      </div>
+
+      <div class="zone">
+        <div class="zonehead">
+          <h3 data-i18n="extraZone">EXTRA</h3><span class="num" id="nExtra">0 / 15</span>
+          <span class="bar"><i id="bExtra"></i></span>
+          <span class="cost" id="cExtra"></span>
+        </div>
+        <div class="grid deckgrid dropzone" id="zExtra" data-zone="extra"></div>
+      </div>
+
+      <div class="zone">
+        <div class="zonehead">
+          <h3 data-i18n="sideZone">SIDE</h3><span class="num" id="nSide">0 / 15</span>
+          <span class="bar"><i id="bSide"></i></span>
+          <span class="cost" id="cSide"></span>
+        </div>
+        <div class="grid deckgrid dropzone" id="zSide" data-zone="side"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <aside class="col">
+    <div class="colhead"><h2 data-i18n="card">CARTE</h2></div>
+    <div class="inspect" id="inspect">
+      <div class="iempty" data-i18n="hover">Survole ou touche une carte pour la voir ici.</div>
+    </div>
+    <div class="credit">
+      <span data-i18n="creditA">Site de fans non officiel. Cartes et données issues de</span>
+      <a href="https://dmo-market.onrender.com" target="_blank" rel="noopener">DMO Market</a>.
+      <span data-i18n="creditB">Yu-Gi-Oh! © Konami. Aucune affiliation.</span>
+    </div>
+  </aside>
+
+</main>
+
+<!-- ---------- Data panel ---------- -->
+<div class="veil" id="veil" hidden>
+  <div class="panel">
+    <button class="closex" id="closeData" aria-label="Fermer">✕</button>
+    <h2>Panneau d'administration</h2>
+    <p style="color:#C0453C">Réservé au mainteneur du site. Les visiteurs n'y ont pas accès.
+    Le catalogue et les prix sont déjà intégrés — n'utilise ceci que pour corriger ou recharger des données.</p>
+
+    <h4>1 · Depuis une URL</h4>
+    <input type="text" id="apiUrl" placeholder="https://dmo-market.onrender.com/api/cards">
+    <div class="row"><button class="btn gold" id="btnFetch">Charger depuis l'URL</button></div>
+    <div class="hint">
+      Pour trouver l'URL exacte : ouvre le DMO Market, F12 → onglet <b>Network</b> → filtre <b>Fetch/XHR</b> → recharge la page →
+      clique la requête qui renvoie la liste de cartes → copie son URL. Si le chargement échoue avec une erreur CORS, le serveur
+      refuse les appels externes : passe par la méthode 2.
+    </div>
+
+    <h4>2 · Coller le JSON</h4>
+    <textarea id="pasteJson" placeholder='[{"name":"Dark Magician","image":"https://…","type":"Spellcaster / Normal","rarity":"Gold"}, …]'></textarea>
+    <div class="row"><button class="btn gold" id="btnPaste">Importer le JSON</button></div>
+    <div class="hint">
+      Astuce : dans la console du DMO Market, tape <code>copy(JSON.stringify(window.cards||[]))</code> ou copie la réponse
+      brute depuis l'onglet Network, puis colle ici.
+    </div>
+
+    <h4>3 · Depuis un fichier</h4>
+    <div class="row">
+      <button class="btn" id="btnFile">Choisir un .json</button>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+    <div class="hint">
+      Clés reconnues automatiquement : <code>name / cardName</code>, <code>image / img / imageUrl</code>,
+      <code>type / cardType</code>, <code>rarity</code>, <code>desc / effect / description</code>,
+      <code>atk</code>, <code>def</code>, <code>level</code>, <code>attribute</code>.
+    </div>
+
+    <h4>4 · Compléter images, types et effets</h4>
+    <div class="row">
+      <button class="btn gold" id="btnEnrich">Enrichir depuis YGOPRODeck</button>
+    </div>
+    <div class="hint">
+      DMO utilise le pool de cartes officiel. Une fois les noms importés, ce bouton récupère
+      image, type, attribut, niveau, ATK/DEF et texte d'effet pour chaque carte, en une seule requête.
+      Les raretés et prix DMO sont conservés. Prévois ~30 s au premier chargement.
+    </div>
+
+    <h4>5 · Mettre à jour les prix du marché</h4>
+    <input type="text" id="priceUrl" placeholder="URL du flux de prix (celui avec price et timestamp)">
+    <textarea id="pricePaste" placeholder='ou colle ici : [{"_id":"curse of dragon","cardName":"Curse of Dragon","rarity":"Gold","price":300}, …]'></textarea>
+    <div class="row">
+      <button class="btn gold" id="btnPriceUrl">Charger depuis l'URL</button>
+      <button class="btn" id="btnPricePaste">Importer le JSON</button>
+    </div>
+    <div class="hint">
+      Fusionne les prix dans le catalogue existant sans rien écraser d'autre. Les cartes absentes
+      du flux gardent leur ancien prix et sont comptées à part dans le total.
+      <code>/api/recent</code> ne renvoie que les 50 dernières annonces — pour tout le catalogue,
+      utilise le motif ci-dessous.
+    </div>
+
+    <h4>6 · Prix en direct via ton proxy</h4>
+    <input type="text" id="proxyUrl"
+           placeholder="https://dmo-price-proxy.onrender.com">
+    <div class="row">
+      <button class="btn gold" id="btnPriceAll">Charger tous les prix</button>
+      <button class="btn" id="btnPriceTest">Tester</button>
+    </div>
+    <div class="hint">
+      Colle l'adresse de ton proxy Render (voir le guide fourni). Le site l'interroge à la place
+      de DMO, ce qui contourne le blocage CORS. Il essaie tout seul les endpoints connus
+      (<code>/api/recent</code>, <code>/api/hottest</code>…) ; les prix se complètent au survol
+      et le bouton parcourt tout le catalogue. Mis en cache, rafraîchi à chaque chargement.
+    </div>
+
+        <h4>7 · Galerie publique (Supabase)</h4>
+    <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+    <input type="text" id="sbKey" placeholder="clé anon publique (eyJ…)" style="margin-top:6px">
+    <div class="row"><button class="btn gold" id="sbSave">Enregistrer la connexion</button></div>
+    <div class="hint">Voir le guide « galerie publique ». Ces deux valeurs sont publiques par nature.</div>
+
+    <div class="status" id="dataStatus"></div>
+  </div>
+</div>
+
+<!-- ---------- Galerie publique (plein écran) ---------- -->
+<div class="galpage" id="galPage" hidden>
+  <header class="galtop">
+    <div class="brand">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <g fill="none" stroke="#F2D97A" stroke-width="9" stroke-linecap="round">
+          <path d="M34 100c20-30 112-30 132 0-20 30-112 30-132 0z"/>
+          <circle cx="100" cy="100" r="19" fill="#F2D97A" stroke="none"/>
+        </g>
+      </svg>
+      <b>DMO</b><span data-i18n="gallery">Galerie</span>
+    </div>
+    <input class="search" id="galSearch" style="max-width:280px;margin-left:auto"
+           placeholder="Rechercher un deck…" data-i18n-ph="galSearchPh" autocomplete="off">
+    <button class="btn gold" id="galBack" data-i18n="backToBuilder">← Retour au builder</button>
+  </header>
+  <div class="galgrid" id="galList">
+    <div style="color:#6E6180;font-size:13px;padding:20px">Chargement…</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= internationalisation ================= */
+const I18N = {
+  en: {
+    subtitle: "Deck Builder",
+    main: "Main", monsters: "Monsters", spells: "Spells", traps: "Traps", cost: "Cost",
+    clear: "Clear", copy: "Copy list", share: "Share", publish: "Publish", gallery: "Gallery",
+    pool: "POOL", viewTable: "\u2630 Table", viewGrid: "\u25A6 Grid",
+    search: "Search a card\u2026",
+    allTypes: "All types", allRar: "All rarities", allAttr: "All attributes", allSub: "All subtypes",
+    sortAz: "Name A\u2192Z", sortZa: "Name Z\u2192A", sortType: "Type", sortLvl: "Level \u2193",
+    sortPriceDown: "Price \u2193", sortPriceUp: "Price \u2191",
+    colCard: "CARD", colType: "TYPE", colRar: "RARITY", colPrice: "PRICE",
+    deck: "DECK", mainZone: "MAIN", extraZone: "EXTRA", sideZone: "SIDE", card: "CARD",
+    hover: "Hover or tap a card to preview it here.",
+    creditA: "Unofficial fan site. Cards and data from",
+    creditB: "Yu-Gi-Oh! \u00A9 Konami. No affiliation.",
+    cards: "cards", add: "Add", toSide: "\u2192 Side",
+    emptyMain: "Click a card in the pool to add it.",
+    emptyExtra: "Fusion, Synchro, Xyz and Link land here.",
+    emptySide: "Drag your Side cards here.",
+    maxCopies: (n, name) => "Maximum " + n + " copies of \u201C" + name + "\u201D",
+    zoneFull: (z, n) => "The " + z + " is full (" + n + ")",
+    noExtraInMain: "An Extra card can't go in the Main.",
+    onlyExtra: "Only Fusion / Synchro / Xyz / Link go in the Extra.",
+    noPrice: "no price", deckName: "Untitled Deck",
+    listCopied: "List copied", linkCopied: "Share link copied to clipboard",
+    addFirst: "Add cards before sharing.", pubFirst: "Add cards before publishing.",
+    galleryOff: "Gallery not configured (admin panel).",
+    published: "Deck published to the gallery!", pubFail: "Publishing failed: ",
+    galEmpty: "No decks published yet. Be the first!", loading: "Loading\u2026",
+    galErr: "Error: ", load: "Load", loaded: (n) => "\u201C" + n + "\u201D loaded",
+    sharedOpened: "Deck opened from a shared link", clearConfirm: "Clear the deck?",
+    unreadable: "Unreadable deck.", pseudoPrompt: "Your nickname (optional):",
+    total: "Total", completed: (n) => n + " cards completed",
+    galSearchPh: "Search a deck\u2026", backToBuilder: "\u2190 Back to builder",
+    costWithUnknown: (n) => "Cost (" + n + " ?)",
+    costTipUnknown: (n) => n + " card(s) with no known price \u2014 minimum total",
+    costTip: "Total deck cost at market prices",
+    cardsLoaded: (n) => n + " cards loaded",
+    lvl: "Lv.",
+    visualsFail: "Visuals unavailable \u2014 try again later",
+    copyPrompt: "Copy this link to share your deck:",
+  },
+  fr: {
+    subtitle: "Deck Builder",
+    main: "Main", monsters: "Monstres", spells: "Magies", traps: "Pi\u00E8ges", cost: "Co\u00FBt",
+    clear: "Vider", copy: "Copier la liste", share: "Partager", publish: "Publier", gallery: "Galerie",
+    pool: "POOL", viewTable: "\u2630 Table", viewGrid: "\u25A6 Grille",
+    search: "Chercher une carte\u2026",
+    allTypes: "Tous les types", allRar: "Toutes rar\u00E9t\u00E9s", allAttr: "Tous attributs", allSub: "Tous sous-types",
+    sortAz: "Nom A\u2192Z", sortZa: "Nom Z\u2192A", sortType: "Type", sortLvl: "Niveau \u2193",
+    sortPriceDown: "Prix \u2193", sortPriceUp: "Prix \u2191",
+    colCard: "CARTE", colType: "TYPE", colRar: "RARET\u00C9", colPrice: "PRIX",
+    deck: "DECK", mainZone: "MAIN", extraZone: "EXTRA", sideZone: "SIDE", card: "CARTE",
+    hover: "Survole ou touche une carte pour la voir ici.",
+    creditA: "Site de fans non officiel. Cartes et donn\u00E9es issues de",
+    creditB: "Yu-Gi-Oh! \u00A9 Konami. Aucune affiliation.",
+    cards: "cartes", add: "Ajouter", toSide: "\u2192 Side",
+    emptyMain: "Clique une carte du pool pour l'ajouter.",
+    emptyExtra: "Fusion, Synchro, Xyz et Link atterrissent ici.",
+    emptySide: "Glisse ici tes cartes de Side.",
+    maxCopies: (n, name) => "Maximum " + n + " exemplaires de \u00AB " + name + " \u00BB",
+    zoneFull: (z, n) => "Le " + z + " est plein (" + n + ")",
+    noExtraInMain: "Une carte Extra ne peut pas aller dans le Main.",
+    onlyExtra: "Seules Fusion / Synchro / Xyz / Link vont dans l'Extra.",
+    noPrice: "sans prix", deckName: "Deck sans nom",
+    listCopied: "Liste copi\u00E9e", linkCopied: "Lien de partage copi\u00E9 dans le presse-papiers",
+    addFirst: "Ajoute des cartes avant de partager.", pubFirst: "Ajoute des cartes avant de publier.",
+    galleryOff: "Galerie non configur\u00E9e (panneau admin).",
+    published: "Deck publi\u00E9 dans la galerie !", pubFail: "\u00C9chec de la publication : ",
+    galEmpty: "Aucun deck publi\u00E9 pour l'instant. Sois le premier !", loading: "Chargement\u2026",
+    galErr: "Erreur : ", load: "Charger", loaded: (n) => "\u00AB " + n + " \u00BB charg\u00E9",
+    sharedOpened: "Deck ouvert depuis un lien partag\u00E9", clearConfirm: "Vider le deck ?",
+    unreadable: "Deck illisible.", pseudoPrompt: "Ton pseudo (facultatif) :",
+    total: "Total", completed: (n) => n + " cartes compl\u00E9t\u00E9es",
+    galSearchPh: "Rechercher un deck\u2026", backToBuilder: "\u2190 Retour au builder",
+    costWithUnknown: (n) => "Co\u00FBt (" + n + " ?)",
+    costTipUnknown: (n) => n + " carte(s) sans prix connu \u2014 total minimum",
+    costTip: "Co\u00FBt total du deck aux prix du march\u00E9",
+    cardsLoaded: (n) => n + " cartes charg\u00E9es",
+    lvl: "Niv.",
+    visualsFail: "Visuels indisponibles \u2014 r\u00E9essaie plus tard",
+    copyPrompt: "Copie ce lien pour partager ton deck :",
+  },
+};
+
+let LANG = "en";
+const t = (k, ...a) => {
+  const v = (I18N[LANG] || I18N.en)[k];
+  return typeof v === "function" ? v(...a) : (v ?? k);
+};
+
+function applyLang(lang) {
+  LANG = I18N[lang] ? lang : "en";
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const k = el.getAttribute("data-i18n");
+    if (I18N[LANG][k] !== undefined) el.textContent = t(k);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
+    const k = el.getAttribute("data-i18n-ph");
+    if (I18N[LANG][k] !== undefined) el.placeholder = t(k);
+  });
+  const lb = document.getElementById("btnLang");
+  if (lb) lb.textContent = LANG === "en" ? "FR" : "EN";
+  try { localStorage.setItem("dmo_lang", LANG); } catch (e) {}
+};
+
+
+/* ---------------- storage (dégrade en mémoire si localStorage bloqué) ---------------- */
+const store = (() => {
+  const mem = {};
+  let ok = true;
+  try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); } catch (e) { ok = false; }
+  return {
+    get(k) { try { return ok ? localStorage.getItem(k) : mem[k] ?? null; } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { try { ok ? localStorage.setItem(k, v) : (mem[k] = v); } catch (e) { mem[k] = v; } }
+  };
+})();
+
+/* ---------------- frames ---------------- */
+const FRAME_RULES = [
+  [/\blink\b/i,      "link",    "#2A5B96", true],
+  [/\bxyz\b/i,       "xyz",     "#171720", true],
+  [/\bsynchro\b/i,   "synchro", "#D8D5CE", false],
+  [/\bfusion\b/i,    "fusion",  "#8A5FA8", true],
+  [/\britual\b/i,    "ritual",  "#5C86C4", true],
+  [/\btrap\b|piège/i,"trap",    "#B2478A", true],
+  [/\bspell\b|magic/i,"spell",  "#12A38A", true],
+  [/\beffect\b/i,    "effect",  "#C2703C", false],
+];
+const EXTRA_RE = /\b(fusion|synchro|xyz|link)\b/i;
+
+function frameOf(type) {
+  const t = String(type || "");
+  for (const [re, key, color, dark] of FRAME_RULES) if (re.test(t)) return { key, color, dark };
+  return { key: "normal", color: "#C9A961", dark: false };
+}
+
+/* ---------------- normalisation ---------------- */
+const pick = (o, keys) => {
+  for (const k of keys) {
+    if (o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k];
+  }
+  return undefined;
+};
+
+function normalize(raw, i) {
+  if (typeof raw === "string") raw = { name: raw };
+
+  const name = String(pick(raw, ["name", "cardName", "card_name", "title", "Name"]) ?? "Carte " + i);
+  const rawType = String(pick(raw, ["type", "cardType", "card_type", "Type", "category"]) ?? "");
+  const subType = String(pick(raw, ["spellTrapType", "subType", "spell_trap_type"]) ?? "");
+  const monsterType = String(pick(raw, ["monsterType", "race", "monster_type", "Race"]) ?? "");
+
+  /* Le catalogue DMO donne un type plat : "Monster", "Spell" ou "Trap",
+     avec le détail dans spellTrapType / monsterType. */
+  const flat = /^(monster|spell|trap)$/i.test(rawType);
+  let type = rawType;
+  if (flat) {
+    type = /monster/i.test(rawType)
+      ? (monsterType ? monsterType + " / Monster" : "Monster")
+      : (subType ? subType + " " + rawType : rawType);
+  }
+
+  /* Le cadre suit la catégorie, jamais le sous-type : une Magie Rituelle
+     reste verte, elle ne prend pas le bleu des Rituels. */
+  const f = (raw.frame && raw.color)
+    ? { key: raw.frame, color: raw.color, dark: !!raw.dark }
+    : frameOf(flat ? rawType : type);
+
+  const cat = flat
+    ? rawType[0].toUpperCase() + rawType.slice(1).toLowerCase()
+    : (f.key === "trap" ? "Trap" : f.key === "spell" ? "Spell" : "Monster");
+
+  return {
+    id: String(pick(raw, ["id", "cardId", "passcode", "_id"]) ?? "c" + i),
+    name,
+    img: pick(raw, ["image", "img", "imageUrl", "image_url", "imageURL", "art", "picture", "src"]) || "",
+    imgBig: pick(raw, ["imgBig", "image_large", "imageLarge"]) || "",
+    price: pick(raw, ["price", "Price"]) ?? "",
+    type, cat, subType,
+    monsterType,
+    rarity: String(pick(raw, ["rarity", "Rarity", "rare"]) ?? "—").replace(/\?+$/, "").trim() || "—",
+    desc: String(pick(raw, ["desc", "description", "effect", "text", "cardText"]) ?? ""),
+    attribute: String(pick(raw, ["attribute", "Attribute"]) ?? "").toUpperCase(),
+    level: Number(pick(raw, ["level", "Level", "stars", "rank"]) ?? 0) || 0,
+    atk: pick(raw, ["atk", "ATK", "attack"]) ?? "",
+    def: pick(raw, ["def", "DEF", "defense", "defence"]) ?? "",
+    pack: String(pick(raw, ["pack", "set", "Pack"]) ?? ""),
+    frame: f.key, color: f.color, dark: f.dark,
+    isExtra: raw.isExtra !== undefined ? !!raw.isExtra : EXTRA_RE.test(type),
+    _s: name.toLowerCase()
+  };
+}
+
+/* extrait un tableau de cartes depuis à peu près n'importe quelle forme de réponse */
+function extractArray(data) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    for (const k of ["cards", "data", "results", "items", "list", "cardList"]) {
+      if (Array.isArray(data[k])) return data[k];
+    }
+    const arrays = Object.values(data).filter(Array.isArray);
+    if (arrays.length) return arrays.sort((a, b) => b.length - a.length)[0];
+  }
+  return null;
+}
+
+/* ---------------- state ---------------- */
+let CARDS = [];
+let BY_ID = new Map();
+let deck = { main: [], extra: [], side: [] };
+let filtered = [];
+let rendered = 0;
+const PAGE = 120;
+const MAX_COPIES = 3;
+const LIMITS = { main: 60, extra: 15, side: 15 };
+const coarse = matchMedia("(pointer: coarse)").matches;
+
+const $ = (s) => document.querySelector(s);
+const el = (t, c) => { const n = document.createElement(t); if (c) n.className = c; return n; };
+
+/* ---------------- catalogue DMO ----------------
+   1063 cartes. Format compact :
+     Monstre     ["Nom","M",attribut,type,rareté]
+     Magie/Piège ["Nom","S"|"T",sous-type,rareté]
+   Les visuels, niveaux, ATK/DEF et textes d'effet sont récupérés
+   au premier lancement puis mis en cache.                        */
+
+const DMO_PRICES = {
+  "Toon Gemini Elf": 600,
+  "Night Assailant": 2500,
+  "Darklord Marie": 500,
+  "Spell Canceller": 800,
+  "Gravekeeper's Visionary": 1900,
+  "Giant Germ": 1200,
+  "Gravekeeper's Descendant": 1000,
+  "Card Destruction": 2000,
+  "Book of Taiyou": 400,
+  "Curse of Dragon": 300,
+  "Des Koala": 1500,
+  "Heart of the Underdog": 1400,
+  "Book of Life": 1000,
+  "Necrovalley": 2100,
+  "Enraged Battle Ox": 500,
+  "Zera the Mant": 700,
+  "Call of the Haunted": 15000,
+  "Monster Reincarnation": 2000,
+  "D.D. Crow": 800,
+  "Emergency Provisions": 800,
+  "Contract with the Abyss": 1000,
+  "Shadow of Eyes": 300,
+  "The Emperor's Holiday": 400,
+  "Lightforce Sword": 700,
+  "Horus the Black Flame Dragon LV4": 2000,
+  "Buster Rancher": 500,
+  "Kaiser Sea Horse": 3500,
+  "Dragon Piper": 300,
+  "Spell Shattering Arrow": 200,
+  "Giant Rat": 300,
+  "Black Illusion Ritual": 900,
+  "Parrot Dragon": 1000,
+  "Sanga of the Thunder": 2000,
+  "Black Pendant": 500,
+  "Darkfire Soldier #1": 500,
+  "Sasuke Samurai #4": 180,
+  "Card of Safe Return": 100,
+  "Creature Swap": 3000,
+  "A Wingbeat of Giant Dragon": 1000,
+  "Twin-Headed Behemoth": 600,
+  "Graceful Dice": 500,
+  "Pyramid Turtle": 200,
+  "Batteryman Micro-Cell": 2000,
+  "Toon Masked Sorcerer": 450,
+  "Machine Duplication": 200,
+  "Agido": 500,
+  "Sonic Bird": 300,
+  "Polymerization": 500,
+  "Hallowed Life Barrier": 200,
+  "Rush Recklessly": 1000
+};
+
+const DMO_SEED = [
+  ["7", "S", "Continuous", "Common"],
+  ["7 Colored Fish", "M", "WATER", "Fish", "Gold"],
+  ["7 Completed", "S", "Equip", "Silver"],
+  ["A Feather of the Phoenix", "S", "Normal", "Gold"],
+  ["A Feint Plan", "T", "Normal", "Common"],
+  ["A Hero Emerges", "T", "Normal", "Rainbow"],
+  ["A Legendary Ocean", "S", "Field", "Common"],
+  ["A Wingbeat of Giant Dragon", "S", "Normal", "Rainbow"],
+  ["Abaki", "M", "FIRE", "Fiend", "Gold"],
+  ["Absolute End", "T", "Normal", "Common"],
+  ["Abyss Soldier", "M", "WATER", "Aqua", "Gold"],
+  ["Abyssal Designator", "S", "Normal", "Common"],
+  ["Acid Rain", "S", "Normal", "Silver"],
+  ["Acid Trap Hole", "T", "Normal", "Gold"],
+  ["Adhesion Trap Hole", "T", "Normal", "Silver"],
+  ["Adhesive Explosive", "M", "WIND", "Machine", "Gold"],
+  ["After the Struggle", "S", "Normal", "Common"],
+  ["Agido", "M", "EARTH", "Fairy", "Silver"],
+  ["Airknight Parshath", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["Akakieisu", "M", "DARK", "Spellcaster", "Common"],
+  ["Akihiron", "M", "WATER", "Aqua", "Silver"],
+  ["Alligator's Sword", "M", "EARTH", "Beast", "Silver"],
+  ["Alligator's Sword Dragon", "M", "WIND", "Dragon", "Common"],
+  ["Alpha The Magnet Warrior", "M", "EARTH", "Rock", "Gold"],
+  ["Altar for Tribute", "T", "Normal", "Common"],
+  ["Amazoness Chain Master", "M", "EARTH", "Warrior", "Gold"],
+  ["Amazoness Paladin", "M", "EARTH", "Warrior", "Gold"],
+  ["Amazoness Spellcaster", "S", "Normal", "Common"],
+  ["Amazoness Swords Woman", "M", "EARTH", "Warrior", "Silver"],
+  ["Ancient Jar", "M", "EARTH", "Rock", "Common"],
+  ["Ancient Sorcerer", "M", "DARK", "Spellcaster", "Common"],
+  ["Ancient Telescope", "S", "Normal", "Common"],
+  ["Ante", "S", "Normal", "Common"],
+  ["Anthrosaurus", "M", "EARTH", "Dinosaur", "Common"],
+  ["Anti Raigeki", "T", "Normal", "Common"],
+  ["Anti-Magic Arrows", "S", "Quick-Play", "Rainbow"],
+  ["Anti-Spell", "T", "Counter", "Common"],
+  ["Appropriate", "T", "Continuous", "Common"],
+  ["Aqua Chorus", "T", "Continuous", "Common"],
+  ["Aqua Madoor", "M", "WATER", "Spellcaster", "Gold"],
+  ["Arcana Knight Joker", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Archfiend Marmot of Nefariousness", "M", "EARTH", "Beast", "Common"],
+  ["Archfiend Mirror", "M", "DARK", "Fiend", "Common"],
+  ["Archfiend of Gilfer", "M", "DARK", "Fiend", "Gold"],
+  ["Arlownay", "M", "EARTH", "Plant", "Common"],
+  ["Armed Ninja", "M", "EARTH", "Warrior", "Common"],
+  ["Armor Break", "T", "Counter", "Common"],
+  ["Armored Lizard", "M", "EARTH", "Reptile", "Silver"],
+  ["Armored Zombie", "M", "DARK", "Zombie", "Silver"],
+  ["Array of Revealing Light", "S", "Field", "Silver"],
+  ["Arsenal Robber", "T", "Normal", "Common"],
+  ["Assault on GHQ", "T", "Normal", "Common"],
+  ["Astral Barrier", "T", "Continuous", "Common"],
+  ["Athena", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["Atlantean Pikeman", "M", "WATER", "Sea Serpent", "Common"],
+  ["Attack and Receive", "T", "Normal", "Common"],
+  ["Aussa the Earth Charmer", "M", "EARTH", "Spellcaster", "Silver"],
+  ["Autonomous Action Unit", "S", "Equip", "Rainbow"],
+  ["Axe of Despair", "S", "Equip", "Rainbow"],
+  ["Baby Dragon", "M", "WIND", "Dragon", "Common"],
+  ["Back to Square One", "S", "Normal", "Gold"],
+  ["Backfire", "T", "Continuous", "Common"],
+  ["Backup Soldier", "T", "Normal", "Common"],
+  ["Bad Reaction to Simochi", "T", "Continuous", "Common"],
+  ["Ballista of Rampart Smashing", "S", "Equip", "Common"],
+  ["Balloon Lizard", "M", "EARTH", "Reptile", "Gold"],
+  ["Banisher of the Light", "M", "LIGHT", "Fairy", "Gold"],
+  ["Banisher of the Radiance", "M", "LIGHT", "Fairy", "Gold"],
+  ["Banner of Courage", "S", "Continuous", "Common"],
+  ["Barrel Behind the Door", "T", "Counter", "Common"],
+  ["Barrel Dragon", "M", "DARK", "Machine", "Rainbow"],
+  ["Bat", "M", "WIND", "Machine", "Common"],
+  ["Batteryman AA", "M", "LIGHT", "Thunder", "Common"],
+  ["Batteryman C", "M", "LIGHT", "Thunder", "Common"],
+  ["Batteryman D", "M", "LIGHT", "Thunder", "Gold"],
+  ["Batteryman Industrial Strength", "M", "LIGHT", "Thunder", "Rainbow"],
+  ["Batteryman Micro-Cell", "M", "LIGHT", "Thunder", "Rainbow"],
+  ["Battle Ox", "M", "EARTH", "Beast-Warrior", "Gold"],
+  ["Bazoo the Soul-Eater", "M", "EARTH", "Beast", "Rainbow"],
+  ["Bean Soldier", "M", "EARTH", "Plant", "Common"],
+  ["Beast Fangs", "S", "Equip", "Common"],
+  ["Beast Soul Swap", "T", "Normal", "Common"],
+  ["Beautiful Beast Trainer", "M", "EARTH", "Warrior", "Silver"],
+  ["Beckoning Light", "T", "Normal", "Common"],
+  ["Begone, Knave!", "T", "Continuous", "Rainbow"],
+  ["Berfomet", "M", "DARK", "Fiend", "Common"],
+  ["Beta The Magnet Warrior", "M", "EARTH", "Rock", "Gold"],
+  ["Big Bang Shot", "S", "Equip", "Silver"],
+  ["Big Wave Small Wave", "S", "Normal", "Silver"],
+  ["Birdface", "M", "WIND", "Winged Beast", "Gold"],
+  ["Black Dragon's Chick", "M", "DARK", "Dragon", "Common"],
+  ["Black Illusion Ritual", "S", "Ritual", "Gold"],
+  ["Black Luster Ritual", "S", "Ritual", "Gold"],
+  ["Black Luster Soldier", "M", "EARTH", "Warrior", "Rainbow"],
+  ["Black Luster Soldier - Envoy of the Beginning", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Black Magic Ritual", "S", "Ritual", "Gold"],
+  ["Black Pendant", "S", "Equip", "Common"],
+  ["Black Stego", "M", "EARTH", "Dinosaur", "Gold"],
+  ["Black Tyranno", "M", "EARTH", "Dinosaur", "Rainbow"],
+  ["Blade Knight", "M", "LIGHT", "Warrior", "Gold"],
+  ["Blast Held by a Tribute", "T", "Normal", "Rainbow"],
+  ["Blast Sphere", "M", "DARK", "Machine", "Gold"],
+  ["Blast with Chain", "T", "Normal", "Silver"],
+  ["Blasting the Ruins", "T", "Normal", "Common"],
+  ["Blessings of the Nile", "S", "Continuous", "Common"],
+  ["Blind Destruction", "T", "Continuous", "Common"],
+  ["Block Attack", "S", "Normal", "Common"],
+  ["Blowback Dragon", "M", "DARK", "Machine", "Rainbow"],
+  ["Blue Medicine", "S", "Normal", "Common"],
+  ["Blue-Eyed Silver Zombie", "M", "DARK", "Zombie", "Common"],
+  ["Blue-Eyes Ultimate Dragon", "M", "LIGHT", "Dragon", "Rainbow"],
+  ["Blue-Eyes White Dragon", "M", "LIGHT", "Dragon", "Rainbow"],
+  ["Bolt Penguin", "M", "WATER", "Thunder", "Common"],
+  ["Book of Life", "S", "Normal", "Gold"],
+  ["Book of Moon", "S", "Quick-Play", "Rainbow"],
+  ["Book of Secret Arts", "S", "Equip", "Common"],
+  ["Book of Taiyou", "S", "Normal", "Silver"],
+  ["Bottomless Shifting Sand", "T", "Continuous", "Gold"],
+  ["Bottomless Trap Hole", "T", "Normal", "Rainbow"],
+  ["Bowganian", "M", "DARK", "Machine", "Common"],
+  ["Brain Control", "S", "Normal", "Rainbow"],
+  ["Breaker the Magical Warrior", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Breath of Light", "S", "Normal", "Silver"],
+  ["Bubble Crash", "T", "Normal", "Common"],
+  ["Burning Land", "S", "Continuous", "Common"],
+  ["Burning Spear", "S", "Equip", "Common"],
+  ["Burst Breath", "T", "Normal", "Gold"],
+  ["Burst Stream of Destruction", "S", "Normal", "Rainbow"],
+  ["Buster Blader", "M", "EARTH", "Warrior", "Rainbow"],
+  ["Buster Rancher", "S", "Equip", "Gold"],
+  ["Caius the Shadow Monarch", "M", "DARK", "Fiend", "Rainbow"],
+  ["Call of the Earthbound", "T", "Normal", "Silver"],
+  ["Call of the Grave", "T", "Normal", "Common"],
+  ["Call of the Haunted", "T", "Continuous", "Rainbow"],
+  ["Call of the Mummy", "S", "Continuous", "Gold"],
+  ["Cannon Soldier", "M", "DARK", "Machine", "Silver"],
+  ["Card Destruction", "S", "Normal", "Rainbow"],
+  ["Card Ejector", "M", "EARTH", "Spellcaster", "Common"],
+  ["Card of Safe Return", "S", "Continuous", "Common"],
+  ["Card Shuffle", "S", "Continuous", "Common"],
+  ["Castle of Dark Illusions", "M", "DARK", "Fiend", "Gold"],
+  ["Castle Walls", "T", "Normal", "Common"],
+  ["Celtic Guardian", "M", "EARTH", "Warrior", "Common"],
+  ["Cemetary Bomb", "T", "Normal", "Common"],
+  ["Centrifugal Field", "S", "Field", "Common"],
+  ["Cestus of Dagla", "S", "Equip", "Common"],
+  ["Chain Burst", "T", "Continuous", "Common"],
+  ["Chain Destruction", "T", "Normal", "Common"],
+  ["Change of Heart", "S", "Normal", "Rainbow"],
+  ["Chaos End", "S", "Normal", "Rainbow"],
+  ["Chaos Greed", "S", "Normal", "Silver"],
+  ["Chaos Sorcerer", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Chimera the Flying Mythical Beast", "M", "WIND", "Beast", "Common"],
+  ["Chorus of Sanctuary", "S", "Field", "Common"],
+  ["Chosen One", "S", "Normal", "Common"],
+  ["Cocoon of Evolution", "M", "EARTH", "Insect", "Gold"],
+  ["Coffin Seller", "T", "Continuous", "Common"],
+  ["Collected Power", "T", "Normal", "Rainbow"],
+  ["Combination Attack", "S", "Quick-Play", "Common"],
+  ["Command Knight", "M", "FIRE", "Warrior", "Rainbow"],
+  ["Compulsory Evacuation Device", "T", "Normal", "Rainbow"],
+  ["Continuous Destruction Punch", "S", "Continuous", "Gold"],
+  ["Contract with the Abyss", "S", "Ritual", "Gold"],
+  ["Contract with the Dark Master", "S", "Ritual", "Silver"],
+  ["Copycat", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Cosmo Queen", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Cost Down", "S", "Normal", "Gold"],
+  ["Crass Clown", "M", "DARK", "Fiend", "Silver"],
+  ["Crazy Fish", "M", "WATER", "Aqua", "Silver"],
+  ["Creature Swap", "S", "Normal", "Rainbow"],
+  ["Cross Counter", "T", "Normal", "Gold"],
+  ["Cup of Ace", "S", "Normal", "Common"],
+  ["Curse of Aging", "T", "Normal", "Silver"],
+  ["Curse of Anubis", "T", "Normal", "Gold"],
+  ["Curse of Dragon", "M", "DARK", "Dragon", "Gold"],
+  ["Curse of Fiend", "S", "Normal", "Silver"],
+  ["Curse of Royal", "T", "Counter", "Silver"],
+  ["Cursed Seal of the Forbidden Spell", "T", "Counter", "Common"],
+  ["Cyber Jar", "M", "DARK", "Rock", "Rainbow"],
+  ["Cyber Shield", "S", "Equip", "Common"],
+  ["Cyber Soldier of Darkworld", "M", "DARK", "Machine", "Common"],
+  ["Cyber-Stein", "M", "DARK", "Machine", "Rainbow"],
+  ["D. Tribe", "T", "Normal", "Common"],
+  ["D.D. Assailant", "M", "EARTH", "Warrior", "Gold"],
+  ["D.D. Borderline", "S", "Continuous", "Rainbow"],
+  ["D.D. Crow", "M", "DARK", "Winged Beast", "Silver"],
+  ["D.D. Designator", "S", "Normal", "Common"],
+  ["D.D. Dynamite", "T", "Normal", "Common"],
+  ["D.D. Scout Plane", "M", "DARK", "Machine", "Common"],
+  ["D.D. Survivor", "M", "DARK", "Warrior", "Gold"],
+  ["D.D. Trainer", "M", "DARK", "Fiend", "Gold"],
+  ["D.D. Warrior", "M", "EARTH", "Warrior", "Gold"],
+  ["D.D. Warrior Lady", "M", "LIGHT", "Warrior", "Gold"],
+  ["Dancing Elf", "M", "WIND", "Fairy", "Common"],
+  ["Dancing Fairy", "M", "WIND", "Fairy", "Gold"],
+  ["Dangerous Machine Type-6", "S", "Continuous", "Common"],
+  ["Dark Assailant", "M", "DARK", "Zombie", "Common"],
+  ["Dark Blade", "M", "DARK", "Warrior", "Gold"],
+  ["Dark Coffin", "T", "Normal", "Common"],
+  ["Dark Core", "S", "Normal", "Gold"],
+  ["Dark Designator", "S", "Normal", "Rainbow"],
+  ["Dark Driceratops", "M", "EARTH", "Dinosaur", "Rainbow"],
+  ["Dark Elf", "M", "DARK", "Spellcaster", "Gold"],
+  ["Dark Energy", "S", "Equip", "Common"],
+  ["Dark Eradicator Warlock", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Dark Factory of Mass Production", "S", "Normal", "Common"],
+  ["Dark Hole", "S", "Normal", "Rainbow"],
+  ["Dark Magic Attack", "S", "Normal", "Rainbow"],
+  ["Dark Magic Curtain", "S", "Normal", "Rainbow"],
+  ["Dark Magician", "M", "", "Spellcaster", "Rainbow"],
+  ["Dark Magician Girl", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Dark Magician Knight", "M", "DARK", "Warrior", "Gold"],
+  ["Dark Magician of Chaos", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Dark Master - Zorc", "M", "DARK", "Fiend", "Rainbow"],
+  ["Dark Necrofear", "M", "DARK", "Fiend", "Rainbow"],
+  ["Dark Paladin", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Dark Red Enchanter", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Dark Renewal", "T", "Normal", "Rainbow"],
+  ["Dark Room of Nightmare", "S", "Continuous", "Silver"],
+  ["Dark Ruler Ha Des", "M", "DARK", "Fiend", "Rainbow"],
+  ["Dark Shade", "M", "WIND", "Fiend", "Common"],
+  ["Dark Snake Syndrome", "S", "Continuous", "Gold"],
+  ["Darkfire Soldier #1", "M", "FIRE", "Pyro", "Gold"],
+  ["Darkfire Soldier #2", "M", "FIRE", "Pyro", "Gold"],
+  ["Darklord Marie", "M", "DARK", "Fiend", "Silver"],
+  ["Darklord Nurse Reficule", "M", "DARK", "Fairy", "Gold"],
+  ["Darkness Approaches", "S", "Normal", "Common"],
+  ["De-Fusion", "S", "Quick-Play", "Silver"],
+  ["De-Spell", "S", "Normal", "Common"],
+  ["Deal of Phantom", "T", "Normal", "Common"],
+  ["Dedication through Light and Darkness", "S", "Quick-Play", "Gold"],
+  ["Delta Attacker", "S", "Normal", "Common"],
+  ["Demotion", "S", "Equip", "Common"],
+  ["Des Counterblow", "T", "Continuous", "Silver"],
+  ["Des Feral Imp", "M", "DARK", "Reptile", "Gold"],
+  ["Des Koala", "M", "DARK", "Beast", "Common"],
+  ["Desert Sunlight", "T", "Normal", "Common"],
+  ["Destruction Punch", "T", "Normal", "Common"],
+  ["Destruction Ring", "T", "Normal", "Common"],
+  ["Dharma Cannon", "M", "DARK", "Machine", "Common"],
+  ["Diabound Kernel", "M", "DARK", "Fiend", "Gold"],
+  ["Dian Keto the Cure Master", "S", "Normal", "Common"],
+  ["Dice Armadillo", "M", "EARTH", "Machine", "Silver"],
+  ["Different Dimension Capsule", "S", "Normal", "Gold"],
+  ["Different Dimension Dragon", "M", "LIGHT", "Dragon", "Common"],
+  ["Different Dimension Gate", "S", "Continuous", "Gold"],
+  ["Diffusion Wave-Motion", "S", "Normal", "Rainbow"],
+  ["Dimension Fusion", "S", "Normal", "Rainbow"],
+  ["Dimensional Alchemist", "M", "LIGHT", "Fairy", "Gold"],
+  ["Dimensionhole", "S", "Normal", "Common"],
+  ["Disappear", "T", "Normal", "Common"],
+  ["Disarmament", "T", "Normal", "Gold"],
+  ["Disturbance Strategy", "T", "Normal", "Common"],
+  ["Divine Knight Ishzark", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Divine Wrath", "T", "Counter", "Gold"],
+  ["DNA Surgery", "T", "Continuous", "Rainbow"],
+  ["DNA Transplant", "T", "Continuous", "Rainbow"],
+  ["Doom Dozer", "M", "EARTH", "Insect", "Rainbow"],
+  ["Doomcaliber Knight", "M", "DARK", "Fiend", "Rainbow"],
+  ["Dora of Fate", "T", "Normal", "Common"],
+  ["Doriado", "M", "EARTH", "Spellcaster", "Common"],
+  ["Doriado's Blessing", "S", "Ritual", "Common"],
+  ["Doron", "M", "EARTH", "Warrior", "Common"],
+  ["Double Coston", "M", "DARK", "Zombie", "Rainbow"],
+  ["Double Snare", "S", "Normal", "Common"],
+  ["Dragged Down into the Grave", "S", "Normal", "Gold"],
+  ["Dragon Capture Jar", "T", "Continuous", "Common"],
+  ["Dragon Nails", "S", "Equip", "Common"],
+  ["Dragon Piper", "M", "FIRE", "Pyro", "Gold"],
+  ["Dragon Seeker", "M", "DARK", "Fiend", "Gold"],
+  ["Dragon Treasure", "S", "Equip", "Common"],
+  ["Dragon's Gunfire", "S", "Normal", "Common"],
+  ["Dragon's Rage", "T", "Continuous", "Common"],
+  ["Dragonic Attack", "S", "Equip", "Silver"],
+  ["Draining Shield", "T", "Normal", "Gold"],
+  ["Dramatic Rescue", "T", "Normal", "Silver"],
+  ["Dream Clown", "M", "EARTH", "Warrior", "Common"],
+  ["Drillago", "M", "DARK", "Machine", "Gold"],
+  ["Driving Snow", "T", "Normal", "Common"],
+  ["Drop Off", "T", "Normal", "Silver"],
+  ["Dunames Dark Witch", "M", "LIGHT", "Fairy", "Gold"],
+  ["Dust Barrier", "S", "Continuous", "Silver"],
+  ["Dust Tornado", "T", "Normal", "Rainbow"],
+  ["Earth Chant", "S", "Ritual", "Common"],
+  ["Earthquake", "S", "Normal", "Silver"],
+  ["Eatgaboon", "T", "Normal", "Common"],
+  ["Ebon Magician Curran", "M", "DARK", "Spellcaster", "Gold"],
+  ["Ectoplasmer", "S", "Continuous", "Rainbow"],
+  ["Ekibyo Drakmord", "S", "Equip", "Gold"],
+  ["Electric Lizard", "M", "EARTH", "Thunder", "Common"],
+  ["Electro-Whip", "S", "Equip", "Common"],
+  ["Elegant Egotist", "S", "Normal", "Silver"],
+  ["Element Dragon", "M", "LIGHT", "Dragon", "Silver"],
+  ["Element Valkyrie", "M", "LIGHT", "Fairy", "Silver"],
+  ["Elemental Burst", "T", "Normal", "Silver"],
+  ["Elemental Mistress Doriado", "M", "LIGHT", "Spellcaster", "Common"],
+  ["Elf's Light", "S", "Equip", "Common"],
+  ["Emblem of Dragon Destroyer", "S", "Normal", "Gold"],
+  ["Embryonic Beast", "M", "DARK", "Fiend", "Common"],
+  ["Emergency Provisions", "S", "Quick-Play", "Silver"],
+  ["Enchanted Javelin", "T", "Normal", "Common"],
+  ["Enchanting Fitting Room", "S", "Normal", "Gold"],
+  ["Enemy Controller", "S", "Quick-Play", "Rainbow"],
+  ["Energy Drain", "T", "Normal", "Common"],
+  ["Enervating Mist", "T", "Continuous", "Common"],
+  ["Enraged Battle Ox", "M", "EARTH", "Beast-Warrior", "Gold"],
+  ["Eradicating Aerosol", "S", "Normal", "Silver"],
+  ["Eria the Water Charmer", "M", "WATER", "Spellcaster", "Silver"],
+  ["Eternal Drought", "S", "Normal", "Silver"],
+  ["Eternal Rest", "S", "Normal", "Gold"],
+  ["Exchange", "S", "Normal", "Gold"],
+  ["Exchange of the Spirit", "T", "Normal", "Common"],
+  ["Exhausting Spell", "T", "Normal", "Common"],
+  ["Exile of the Wicked", "S", "Normal", "Gold"],
+  ["Fairy Dragon", "M", "WIND", "Dragon", "Common"],
+  ["Fairy Meteor Crush", "S", "Equip", "Silver"],
+  ["Fairy of the Spring", "S", "Normal", "Common"],
+  ["Fake Trap", "T", "Normal", "Common"],
+  ["Fiend Comedian", "T", "Normal", "Common"],
+  ["Fiend Reflection #1", "M", "WIND", "Winged Beast", "Common"],
+  ["Fiend Reflection #2", "M", "LIGHT", "Winged Beast", "Common"],
+  ["Fiend's Hand", "M", "DARK", "Zombie", "Common"],
+  ["Fiendish Engine Omega", "M", "DARK", "Machine", "Rainbow"],
+  ["Final Attack Orders", "T", "Continuous", "Silver"],
+  ["Final Countdown", "S", "Normal", "Rainbow"],
+  ["Final Destiny", "S", "Normal", "Rainbow"],
+  ["Final Flame", "S", "Normal", "Common"],
+  ["Fire Princess", "M", "FIRE", "Pyro", "Silver"],
+  ["Firewing Pegasus", "M", "FIRE", "Beast", "Gold"],
+  ["Fissure", "S", "Normal", "Rainbow"],
+  ["Flame Ruler", "M", "FIRE", "Pyro", "Silver"],
+  ["Flint", "S", "Equip", "Gold"],
+  ["Follow Wind", "S", "Equip", "Common"],
+  ["Foolish Burial", "S", "Normal", "Gold"],
+  ["Forced Ceasefire", "T", "Normal", "Rainbow"],
+  ["Forest", "S", "Field", "Common"],
+  ["Formation Union", "T", "Normal", "Common"],
+  ["Fossil Dyna Pachycephalo", "M", "EARTH", "Rock", "Rainbow"],
+  ["Fox Fire", "M", "FIRE", "Pyro", "Silver"],
+  ["Freed the Brave Wanderer", "M", "LIGHT", "Warrior", "Gold"],
+  ["Frontline Base", "S", "Continuous", "Common"],
+  ["Frozen Soul", "T", "Normal", "Common"],
+  ["Fruits of Kozaky's Studies", "T", "Normal", "Common"],
+  ["Fuh-Rin-Ka-Zan", "T", "Normal", "Rainbow"],
+  ["Fulfillment of the Contract", "S", "Equip", "Gold"],
+  ["Fusion Gate", "S", "Field", "Silver"],
+  ["Fusion Sage", "S", "Normal", "Common"],
+  ["Fusion Sword Murasame Blade", "S", "Equip", "Gold"],
+  ["Fusion Weapon", "S", "Equip", "Common"],
+  ["Gaia Power", "S", "Field", "Common"],
+  ["Gaia the Dragon Champion", "M", "WIND", "Dragon", "Gold"],
+  ["Gaia The Fierce Knight", "M", "EARTH", "Warrior", "Gold"],
+  ["Gamble", "T", "Normal", "Common"],
+  ["Gamma the Magnet Warrior", "M", "EARTH", "Rock", "Gold"],
+  ["Gandora the Dragon of Destruction", "M", "DARK", "Dragon", "Rainbow"],
+  ["Gather Your Mind", "S", "Normal", "Common"],
+  ["Gatling Dragon", "M", "DARK", "Machine", "Rainbow"],
+  ["Gazelle the King of Mythical Beasts", "M", "EARTH", "Beast", "Silver"],
+  ["Gearfried the Iron Knight", "M", "EARTH", "Warrior", "Gold"],
+  ["Gellenduo", "M", "LIGHT", "Fairy", "Gold"],
+  ["Germ Infection", "S", "Equip", "Common"],
+  ["Gernia", "M", "DARK", "Zombie", "Silver"],
+  ["Getsu Fuhma", "M", "DARK", "Warrior", "Gold"],
+  ["Ghoul with an Appetite", "M", "DARK", "Zombie", "Gold"],
+  ["Giant Germ", "M", "DARK", "Fiend", "Gold"],
+  ["Giant Rat", "M", "EARTH", "Beast", "Silver"],
+  ["Giant Soldier of Stone", "M", "EARTH", "Rock", "Gold"],
+  ["Giant Trunade", "S", "Normal", "Rainbow"],
+  ["Gigobyte", "M", "WATER", "Reptile", "Common"],
+  ["Gilasaurus", "M", "EARTH", "Dinosaur", "Silver"],
+  ["Gilford the Lightning", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Goblin Fan", "T", "Continuous", "Common"],
+  ["Goblin Thief", "S", "Normal", "Common"],
+  ["Goblin Zombie", "M", "DARK", "Zombie", "Common"],
+  ["Goblin's Secret Remedy", "S", "Normal", "Common"],
+  ["Goddess with the Third Eye", "M", "LIGHT", "Fairy", "Common"],
+  ["Gold Sarcophagus", "S", "Normal", "Rainbow"],
+  ["Good Goblin Housekeeping", "T", "Normal", "Common"],
+  ["Gorgon Egg", "M", "DARK", "Fiend", "Common"],
+  ["Gorgon's Eye", "T", "Normal", "Common"],
+  ["Graceful Charity", "S", "Normal", "Rainbow"],
+  ["Graceful Dice", "S", "Quick-Play", "Common"],
+  ["Granmarg the Rock Monarch", "M", "EARTH", "Rock", "Rainbow"],
+  ["Grave Squirmer", "M", "DARK", "Fiend", "Gold"],
+  ["Gravedigger Ghoul", "S", "Normal", "Common"],
+  ["Gravekeeper's Descendant", "M", "DARK", "Spellcaster", "Gold"],
+  ["Gravekeeper's Recruiter", "M", "DARK", "Spellcaster", "Silver"],
+  ["Gravekeeper's Servant", "S", "Continuous", "Common"],
+  ["Gravekeeper's Spy", "M", "DARK", "Spellcaster", "Gold"],
+  ["Graverobber", "T", "Normal", "Gold"],
+  ["Graverobber's Retribution", "T", "Continuous", "Common"],
+  ["Graveyard and the Hand of Invitation", "M", "DARK", "Zombie", "Common"],
+  ["Gravity Axe - Grarl", "S", "Equip", "Gold"],
+  ["Gravity Bind", "T", "Continuous", "Rainbow"],
+  ["Great Angus", "M", "FIRE", "Beast", "Gold"],
+  ["Great Moth", "M", "EARTH", "Insect", "Rainbow"],
+  ["Greed", "T", "Continuous", "Common"],
+  ["Green Baboon, Defender of the Forest", "M", "EARTH", "Beast", "Rainbow"],
+  ["Green Gadget", "M", "EARTH", "Machine", "Silver"],
+  ["Greenkappa", "M", "DARK", "Warrior", "Common"],
+  ["Griggle", "M", "EARTH", "Plant", "Common"],
+  ["Gryphon Wing", "T", "Normal", "Common"],
+  ["Gryphon's Feather Duster", "S", "Normal", "Common"],
+  ["Guardian Angel Joan", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["Guardian Eatos", "M", "WIND", "Fairy", "Rainbow"],
+  ["Gust", "T", "Normal", "Common"],
+  ["Gust Fan", "S", "Equip", "Common"],
+  ["Gyakutenno Megami", "M", "LIGHT", "Fairy", "Silver"],
+  ["Hallowed Life Barrier", "T", "Normal", "Silver"],
+  ["Hammer Shot", "S", "Normal", "Rainbow"],
+  ["Hand of Nephthys", "M", "WIND", "Spellcaster", "Common"],
+  ["Hane-Hane", "M", "EARTH", "Beast", "Gold"],
+  ["Haniwa", "M", "EARTH", "Rock", "Common"],
+  ["Happy Lover", "M", "LIGHT", "Fairy", "Common"],
+  ["Harpie Girl", "M", "WIND", "Winged Beast", "Common"],
+  ["Harpie Lady", "M", "WIND", "Winged Beast", "Common"],
+  ["Harpie Lady 1", "M", "WIND", "Winged Beast", "Gold"],
+  ["Harpie Lady 2", "M", "WIND", "Winged Beast", "Common"],
+  ["Harpie Lady 3", "M", "WIND", "Winged Beast", "Common"],
+  ["Harpie Lady Sisters", "M", "WIND", "Winged Beast", "Silver"],
+  ["Harpie Queen", "M", "WIND", "Winged Beast", "Rainbow"],
+  ["Harpie's Feather Duster", "S", "Normal", "Rainbow"],
+  ["Harpie's Pet Baby Dragon", "M", "WIND", "Dragon", "Silver"],
+  ["Harpies' Hunting Ground", "S", "Field", "Silver"],
+  ["Heart of Clear Water", "S", "Equip", "Gold"],
+  ["Heart of the Underdog", "S", "Continuous", "Gold"],
+  ["Heavy Mech Support Platform", "M", "DARK", "Machine", "Common"],
+  ["Heavy Slump", "T", "Normal", "Common"],
+  ["Heavy Storm", "S", "Normal", "Rainbow"],
+  ["Hero of the East", "M", "EARTH", "Warrior", "Common"],
+  ["Hidden Soldiers", "T", "Normal", "Gold"],
+  ["Hidden Spellbook", "T", "Normal", "Common"],
+  ["Hieroglyph Lithograph", "S", "Normal", "Common"],
+  ["High Tide Gyojin", "M", "WATER", "Aqua", "Gold"],
+  ["Hiita the Fire Charmer", "M", "FIRE", "Spellcaster", "Silver"],
+  ["Hinotama", "S", "Normal", "Common"],
+  ["Hiro's Shadow Scout", "M", "DARK", "Fiend", "Common"],
+  ["Hitotsu-Me Giant", "M", "EARTH", "Beast-Warrior", "Common"],
+  ["Homunculus the Alchemic Being", "M", "LIGHT", "Plant", "Gold"],
+  ["Horn Imp", "M", "DARK", "Fiend", "Common"],
+  ["Horn of Heaven", "T", "Counter", "Gold"],
+  ["Horn of Light", "S", "Equip", "Silver"],
+  ["Horn of the Unicorn", "S", "Equip", "Gold"],
+  ["Horus the Black Flame Dragon LV4", "M", "FIRE", "Dragon", "Gold"],
+  ["Horus the Black Flame Dragon LV6", "M", "FIRE", "Dragon", "Rainbow"],
+  ["Horus the Black Flame Dragon LV8", "M", "FIRE", "Dragon", "Rainbow"],
+  ["Hoshiningen", "M", "LIGHT", "Fairy", "Common"],
+  ["House of Adhesive Tape", "T", "Normal", "Common"],
+  ["Howling Insect", "M", "EARTH", "Insect", "Gold"],
+  ["Human-Wave Tactics", "T", "Continuous", "Silver"],
+  ["Hunter Dragon", "M", "DARK", "Dragon", "Gold"],
+  ["Hunter Owl", "M", "WIND", "Winged Beast", "Gold"],
+  ["Hyper Hammerhead", "M", "EARTH", "Dinosaur", "Gold"],
+  ["Inferno Fire Blast", "S", "Normal", "Silver"],
+  ["Infinite Cards", "S", "Continuous", "Common"],
+  ["Infinite Dismissal", "T", "Continuous", "Silver"],
+  ["Injection Fairy Lily", "M", "EARTH", "Spellcaster", "Rainbow"],
+  ["Insect Armor with Laser Cannon", "S", "Equip", "Silver"],
+  ["Insect Barrier", "S", "Continuous", "Common"],
+  ["Insect Imitation", "S", "Normal", "Silver"],
+  ["Insect Queen", "M", "EARTH", "Insect", "Gold"],
+  ["Inspection", "S", "Continuous", "Silver"],
+  ["Interdimensional Matter Transporter", "T", "Normal", "Common"],
+  ["Invigoration", "S", "Equip", "Common"],
+  ["Invitation to a Dark Sleep", "M", "DARK", "Spellcaster", "Common"],
+  ["Island Turtle", "M", "WATER", "Aqua", "Gold"],
+  ["Jack's Knight", "M", "LIGHT", "Warrior", "Gold"],
+  ["Jade Insect Whistle", "S", "Normal", "Common"],
+  ["Jam Breeding Machine", "S", "Continuous", "Silver"],
+  ["Jam Defender", "T", "Continuous", "Common"],
+  ["Jar of Greed", "T", "Normal", "Gold"],
+  ["Jar Robber", "S", "Quick-Play", "Common"],
+  ["Jerry Beans Man", "M", "EARTH", "Plant", "Gold"],
+  ["Jinzo", "M", "DARK", "Machine", "Rainbow"],
+  ["Jowgen the Spiritualist", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Jowls of Dark Demise", "M", "WATER", "Fiend", "Silver"],
+  ["Judge Man", "M", "EARTH", "Warrior", "Gold"],
+  ["Judgment of Anubis", "T", "Counter", "Rainbow"],
+  ["Just Desserts", "T", "Normal", "Gold"],
+  ["KA-2 Des Scissors", "M", "DARK", "Machine", "Common"],
+  ["Kageningen", "M", "DARK", "Warrior", "Common"],
+  ["Kaibaman", "M", "LIGHT", "Warrior", "Common"],
+  ["Kaiser Sea Horse", "M", "LIGHT", "Sea Serpent", "Rainbow"],
+  ["Kamakiriman", "M", "EARTH", "Insect", "Common"],
+  ["Kelbek", "M", "EARTH", "Fairy", "Gold"],
+  ["King of the Skull Servants", "M", "DARK", "Zombie", "Common"],
+  ["King of the Swamp", "M", "WATER", "Aqua", "Gold"],
+  ["King Tiger Wanghu", "M", "EARTH", "Beast", "Gold"],
+  ["King's Knight", "M", "LIGHT", "Warrior", "Gold"],
+  ["Kishido Spirit", "S", "Continuous", "Common"],
+  ["Knight's Title", "S", "Normal", "Silver"],
+  ["Kunai with Chain", "T", "Normal", "Rainbow"],
+  ["Kuriboh", "M", "DARK", "Fiend", "Silver"],
+  ["Kycoo the Ghost Destroyer", "M", "DARK", "Spellcaster", "Gold"],
+  ["Labyrinth of Nightmare", "T", "Continuous", "Common"],
+  ["Lady of Faith", "M", "LIGHT", "Spellcaster", "Common"],
+  ["Laser Cannon Armor", "S", "Equip", "Common"],
+  ["Last Day of Witch", "S", "Normal", "Silver"],
+  ["Launcher Spider", "M", "FIRE", "Machine", "Common"],
+  ["Lava Battleguard", "M", "EARTH", "Warrior", "Silver"],
+  ["Lava Golem", "M", "FIRE", "Fiend", "Rainbow"],
+  ["Left Arm Offering", "S", "Normal", "Common"],
+  ["Legendary Fiend", "M", "DARK", "Fiend", "Gold"],
+  ["Legendary Jujitsu Master", "M", "EARTH", "Rock", "Gold"],
+  ["Legendary Sword", "S", "Equip", "Common"],
+  ["Lekunga", "M", "WATER", "Plant", "Gold"],
+  ["Level Limit - Area B", "S", "Continuous", "Rainbow"],
+  ["Level Up!", "S", "Normal", "Gold"],
+  ["Light of Intervention", "T", "Continuous", "Common"],
+  ["Light of Judgment", "T", "Normal", "Common"],
+  ["Lighten the Load", "S", "Continuous", "Common"],
+  ["Lightforce Sword", "T", "Normal", "Gold"],
+  ["Lightning Blade", "S", "Equip", "Silver"],
+  ["Lightning Vortex", "S", "Normal", "Rainbow"],
+  ["Limiter Removal", "S", "Quick-Play", "Rainbow"],
+  ["Little-Winguard", "M", "WIND", "Warrior", "Gold"],
+  ["Lord of D.", "M", "DARK", "Spellcaster", "Silver"],
+  ["Lord Poison", "M", "WATER", "Plant", "Silver"],
+  ["Luminous Soldier", "M", "LIGHT", "Warrior", "Gold"],
+  ["Luminous Spark", "S", "Field", "Common"],
+  ["Lyna the Light Charmer", "M", "LIGHT", "Spellcaster", "Silver"],
+  ["Machine Attacker", "M", "EARTH", "Machine", "Common"],
+  ["Machine Conversion Factory", "S", "Equip", "Common"],
+  ["Machine Duplication", "S", "Normal", "Silver"],
+  ["Machine King", "M", "EARTH", "Machine", "Gold"],
+  ["Mage Power", "S", "Equip", "Rainbow"],
+  ["Magic Cylinder", "T", "Normal", "Rainbow"],
+  ["Magic Drain", "T", "Counter", "Gold"],
+  ["Magic Jammer", "T", "Counter", "Rainbow"],
+  ["Magic Reflector", "S", "Normal", "Common"],
+  ["Magical Ghost", "M", "DARK", "Zombie", "Common"],
+  ["Magical Thorn", "T", "Continuous", "Common"],
+  ["Magician of Black Chaos", "M", "DARK", "Spellcaster", "Gold"],
+  ["Magician of Faith", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Magician's Circle", "T", "Normal", "Gold"],
+  ["Magicians Unite", "S", "Normal", "Gold"],
+  ["Magnet Force", "T", "Normal", "Silver"],
+  ["Magnet Reverse", "S", "Quick-Play", "Gold"],
+  ["Magnetic Mosquito", "M", "LIGHT", "Insect", "Gold"],
+  ["Maha Vailo", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Maiden of the Aqua", "M", "WATER", "Aqua", "Gold"],
+  ["Major Riot", "T", "Normal", "Common"],
+  ["Makiu, the Magical Mist", "S", "Normal", "Silver"],
+  ["Malevolent Catastrophe", "T", "Normal", "Rainbow"],
+  ["Malevolent Nuzzler", "S", "Equip", "Gold"],
+  ["Malice Dispersion", "S", "Quick-Play", "Gold"],
+  ["Man-Eater Bug", "M", "EARTH", "Insect", "Gold"],
+  ["Manju of the Ten Thousand Hands", "M", "LIGHT", "Fairy", "Silver"],
+  ["Marauding Captain", "M", "EARTH", "Warrior", "Gold"],
+  ["Marshmallon", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["Marshmallon Glasses", "S", "Continuous", "Silver"],
+  ["Masaki the Legendary Swordsman", "M", "EARTH", "Warrior", "Common"],
+  ["Mask of Brutality", "S", "Equip", "Rainbow"],
+  ["Mask of Darkness", "M", "DARK", "Fiend", "Silver"],
+  ["Mask of Dispel", "S", "Continuous", "Common"],
+  ["Mask of Restrict", "T", "Continuous", "Gold"],
+  ["Mask of the Accursed", "S", "Equip", "Gold"],
+  ["Mask of Weakness", "T", "Normal", "Silver"],
+  ["Masked Clown", "M", "DARK", "Warrior", "Common"],
+  ["Masked Dragon", "M", "FIRE", "Dragon", "Silver"],
+  ["Masked Sorcerer", "M", "DARK", "Spellcaster", "Common"],
+  ["Mass Driver", "S", "Continuous", "Common"],
+  ["Maximum Six", "M", "EARTH", "Warrior", "Rainbow"],
+  ["Mechanical Snail", "M", "DARK", "Machine", "Common"],
+  ["Mega Thunderball", "M", "WIND", "Thunder", "Common"],
+  ["Mega Ton Magical Cannon", "S", "Normal", "Silver"],
+  ["Megamorph", "S", "Equip", "Rainbow"],
+  ["Mesmeric Control", "S", "Normal", "Common"],
+  ["Messenger of Peace", "S", "Continuous", "Rainbow"],
+  ["Metal Detector", "T", "", "Common"],
+  ["Metalmorph", "T", "Normal", "Gold"],
+  ["Metalsilver Armor", "S", "Equip", "Gold"],
+  ["Metamorphosis", "S", "Normal", "Rainbow"],
+  ["Meteor of Destruction", "S", "Normal", "Common"],
+  ["Meteorain", "T", "Normal", "Common"],
+  ["Michizure", "T", "Normal", "Rainbow"],
+  ["Micro Ray", "T", "Normal", "Silver"],
+  ["Milla the Temporal Magician", "M", "LIGHT", "Spellcaster", "Gold"],
+  ["Millennium Scorpion", "M", "EARTH", "Insect", "Gold"],
+  ["Millennium Shield", "M", "EARTH", "Warrior", "Gold"],
+  ["Mimicat", "S", "Normal", "Gold"],
+  ["Mind Crush", "T", "Normal", "Rainbow"],
+  ["Mind Wipe", "S", "Quick-Play", "Common"],
+  ["Minor Goblin Official", "T", "Continuous", "Common"],
+  ["Miracle Dig", "S", "Normal", "Common"],
+  ["Miracle Restoring", "T", "Normal", "Common"],
+  ["Mirage Dragon", "M", "LIGHT", "Dragon", "Rainbow"],
+  ["Mirror Force", "T", "Normal", "Rainbow"],
+  ["Mirror Wall", "T", "Continuous", "Rainbow"],
+  ["Mobius the Frost Monarch", "M", "WATER", "Aqua", "Rainbow"],
+  ["Mokey Mokey", "M", "LIGHT", "Fairy", "Common"],
+  ["Mokey Mokey King", "M", "LIGHT", "Fairy", "Common"],
+  ["Mokey Mokey Smackdown", "S", "Continuous", "Gold"],
+  ["Molten Destruction", "S", "Field", "Common"],
+  ["Monster Egg", "M", "EARTH", "Warrior", "Common"],
+  ["Monster Eye", "M", "DARK", "Fiend", "Common"],
+  ["Monster Gate", "S", "Normal", "Gold"],
+  ["Monster Recovery", "S", "Quick-Play", "Common"],
+  ["Monster Reincarnation", "S", "Normal", "Gold"],
+  ["Mooyan Curry", "S", "Normal", "Common"],
+  ["Morale Boost", "S", "Continuous", "Common"],
+  ["Morphing Jar", "M", "EARTH", "Rock", "Rainbow"],
+  ["Mother Grizzly", "M", "WATER", "Beast-Warrior", "Silver"],
+  ["Mountain", "S", "Field", "Common"],
+  ["Mountain Warrior", "M", "EARTH", "Beast-Warrior", "Common"],
+  ["Mr. Volcano", "M", "FIRE", "Pyro", "Gold"],
+  ["Ms. Judge", "M", "LIGHT", "Fiend", "Rainbow"],
+  ["Mudora", "M", "EARTH", "Fairy", "Gold"],
+  ["Muko", "T", "Normal", "Common"],
+  ["Multiplication of Ants", "S", "Normal", "Common"],
+  ["Multiply", "S", "Quick-Play", "Common"],
+  ["Mushroom Man", "M", "EARTH", "Plant", "Common"],
+  ["Mushroom Man #2", "M", "EARTH", "Warrior", "Common"],
+  ["My Body as a Shield", "S", "Quick-Play", "Silver"],
+  ["Mysterious Puppeteer", "M", "EARTH", "Warrior", "Silver"],
+  ["Mystic Box", "S", "Normal", "Silver"],
+  ["Mystic Lamp", "M", "DARK", "Spellcaster", "Common"],
+  ["Mystic Plasma Zone", "S", "Field", "Common"],
+  ["Mystic Probe", "T", "Normal", "Common"],
+  ["Mystic Tomato", "M", "DARK", "Plant", "Silver"],
+  ["Mystical Elf", "M", "LIGHT", "Spellcaster", "Gold"],
+  ["Mystical Moon", "S", "Equip", "Common"],
+  ["Mystical Shine Ball", "M", "LIGHT", "Fairy", "Common"],
+  ["Mystical Space Typhoon", "S", "Quick-Play", "Rainbow"],
+  ["Mystik Wok", "S", "Quick-Play", "Common"],
+  ["Neck Hunter", "M", "DARK", "Fiend", "Silver"],
+  ["Necklace of Command", "S", "Equip", "Common"],
+  ["Necrovalley", "S", "Field", "Rainbow"],
+  ["Needle Ceiling", "T", "Normal", "Rainbow"],
+  ["Needle Wall", "T", "Continuous", "Gold"],
+  ["Needle Worm", "M", "EARTH", "Insect", "Common"],
+  ["Negate Attack", "T", "Counter", "Gold"],
+  ["Nemuriko", "M", "DARK", "Spellcaster", "Common"],
+  ["Newdoria", "M", "DARK", "Fiend", "Gold"],
+  ["Night Assailant", "M", "DARK", "Fiend", "Gold"],
+  ["Night Lizard", "M", "WATER", "Aqua", "Common"],
+  ["Nightmare Penguin", "M", "WATER", "Aqua", "Gold"],
+  ["Nightmare Wheel", "T", "Continuous", "Rainbow"],
+  ["Nightmare's Steelcage", "S", "Normal", "Gold"],
+  ["Nimble Momonga", "M", "EARTH", "Beast", "Gold"],
+  ["Nobleman of Crossout", "S", "Normal", "Gold"],
+  ["Nobleman of Extermination", "S", "Normal", "Rainbow"],
+  ["Non-Spellcasting Area", "S", "Continuous", "Silver"],
+  ["Numinous Healer", "T", "Normal", "Common"],
+  ["Nutrient Z", "T", "Normal", "Common"],
+  ["Obnoxious Celtic Guard", "M", "EARTH", "Warrior", "Silver"],
+  ["Ocean of Regeneration", "S", "Continuous", "Gold"],
+  ["Offerings to the Doomed", "S", "Quick-Play", "Gold"],
+  ["Ojama Black", "M", "LIGHT", "Beast", "Common"],
+  ["Ojama Delta Hurricane!!", "S", "Normal", "Rainbow"],
+  ["Ojama Green", "M", "LIGHT", "Beast", "Common"],
+  ["Ojama Trio", "T", "Normal", "Rainbow"],
+  ["Ojama Yellow", "M", "LIGHT", "Beast", "Common"],
+  ["One Who Hunts Souls", "M", "EARTH", "Beast", "Common"],
+  ["Ookazi", "S", "Normal", "Silver"],
+  ["Opti-Camouflage Armor", "S", "Equip", "Common"],
+  ["Order to Charge", "S", "Quick-Play", "Gold"],
+  ["Orgoth the Relentless", "M", "EARTH", "Warrior", "Rainbow"],
+  ["Oscillo Hero", "M", "EARTH", "Warrior", "Common"],
+  ["Painful Choice", "S", "Normal", "Rainbow"],
+  ["Panther Warrior", "M", "EARTH", "Beast-Warrior", "Gold"],
+  ["Paralyzing Potion", "S", "Equip", "Silver"],
+  ["Parrot Dragon", "M", "WIND", "Dragon", "Gold"],
+  ["Penalty Game!", "T", "Normal", "Common"],
+  ["Penguin Soldier", "M", "WATER", "Aqua", "Gold"],
+  ["Penguin Sword", "S", "Equip", "Common"],
+  ["Perfectly Ultimate Great Moth", "M", "EARTH", "Insect", "Rainbow"],
+  ["Peten the Dark Clown", "M", "DARK", "Spellcaster", "Silver"],
+  ["Petit Dragon", "M", "WIND", "Dragon", "Common"],
+  ["Petit Moth", "M", "EARTH", "Insect", "Common"],
+  ["Phantom Ghost", "M", "DARK", "Zombie", "Common"],
+  ["Pharaoh's Treasure", "T", "Normal", "Common"],
+  ["Phoenix Wing Wind Blast", "T", "Normal", "Gold"],
+  ["Pikeru's Circle of Enchantment", "T", "Normal", "Common"],
+  ["Pinch Hopper", "M", "EARTH", "Insect", "Silver"],
+  ["Pineapple Blast", "T", "Normal", "Gold"],
+  ["Pitch-Black Power Stone", "T", "Continuous", "Common"],
+  ["Poison Fangs", "S", "Continuous", "Common"],
+  ["Poison of the Old Man", "S", "Quick-Play", "Common"],
+  ["Polymerization", "S", "Normal", "Common"],
+  ["Possessed Dark Soul", "M", "DARK", "Fiend", "Common"],
+  ["Pot of Greed", "S", "Normal", "Rainbow"],
+  ["Pot the Trick", "M", "EARTH", "Rock", "Common"],
+  ["Power of Kaishin", "S", "Equip", "Common"],
+  ["Precious Cards from Beyond", "S", "Continuous", "Rainbow"],
+  ["Premature Burial", "S", "Equip", "Rainbow"],
+  ["Primal Seed", "S", "Normal", "Common"],
+  ["Pumpking the King of Ghosts", "M", "DARK", "Zombie", "Gold"],
+  ["Puppet Master", "M", "DARK", "Fiend", "Rainbow"],
+  ["Pyramid Energy", "S", "Quick-Play", "Common"],
+  ["Pyramid Turtle", "M", "EARTH", "Zombie", "Common"],
+  ["Pyro Clock of Destiny", "T", "Normal", "Common"],
+  ["Queen's Knight", "M", "LIGHT", "Warrior", "Silver"],
+  ["Raging Flame Sprite", "M", "FIRE", "Pyro", "Common"],
+  ["Raigeki", "S", "Normal", "Rainbow"],
+  ["Raigeki Break", "T", "Normal", "Gold"],
+  ["Raimei", "S", "Normal", "Common"],
+  ["Rain of Mercy", "S", "Normal", "Common"],
+  ["Raise Body Heat", "S", "Equip", "Common"],
+  ["Raiza the Storm Monarch", "M", "WIND", "Winged Beast", "Rainbow"],
+  ["Rapid-Fire Magician", "M", "DARK", "Spellcaster", "Gold"],
+  ["Rare Metalmorph", "T", "Continuous", "Silver"],
+  ["Raregold Armor", "S", "Equip", "Common"],
+  ["Ray of Hope", "T", "Normal", "Common"],
+  ["Re-Fusion", "S", "Equip", "Silver"],
+  ["Ready for Intercepting", "T", "Normal", "Common"],
+  ["Really Eternal Rest", "T", "Normal", "Gold"],
+  ["Reckless Greed", "T", "Normal", "Common"],
+  ["Recycle", "S", "Continuous", "Common"],
+  ["Red Gadget", "M", "EARTH", "Machine", "Silver"],
+  ["Red Medicine", "S", "Normal", "Common"],
+  ["Red-Eyes Black Dragon", "M", "DARK", "Dragon", "Rainbow"],
+  ["Reflect Bounder", "M", "LIGHT", "Machine", "Gold"],
+  ["Reinforcement of the Army", "S", "Normal", "Gold"],
+  ["Reinforcements", "T", "Normal", "Common"],
+  ["Relieve Monster", "T", "Normal", "Gold"],
+  ["Relinquished", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Reload", "S", "Quick-Play", "Silver"],
+  ["Remove Trap", "S", "Normal", "Common"],
+  ["Restructer Revolution", "S", "Normal", "Common"],
+  ["Return of the Doomed", "S", "Normal", "Common"],
+  ["Revival Jam", "M", "WATER", "Aqua", "Gold"],
+  ["Rigorous Reaver", "M", "FIRE", "Plant", "Gold"],
+  ["Ring of Defense", "S", "Quick-Play", "Common"],
+  ["Ring of Destruction", "T", "Normal", "Rainbow"],
+  ["Ring of Magnetism", "S", "Equip", "Common"],
+  ["Riryoku", "S", "Normal", "Gold"],
+  ["Riryoku Field", "T", "Counter", "Gold"],
+  ["Rising Air Current", "S", "Field", "Common"],
+  ["Rite of Spirit", "T", "Normal", "Gold"],
+  ["Ritual Weapon", "S", "Equip", "Common"],
+  ["Rivalry of Warlords", "T", "Continuous", "Rainbow"],
+  ["Robbin' Goblin", "T", "Continuous", "Gold"],
+  ["Robbin' Zombie", "T", "Continuous", "Common"],
+  ["Rocket Warrior", "M", "LIGHT", "Warrior", "Silver"],
+  ["Rod of Silence - Kay'est", "S", "Equip", "Common"],
+  ["Rod of the Mind's Eye", "S", "Equip", "Common"],
+  ["Rope of Life", "T", "Normal", "Gold"],
+  ["Royal Command", "T", "Continuous", "Common"],
+  ["Royal Decree", "T", "Continuous", "Rainbow"],
+  ["Royal Knight", "M", "LIGHT", "Fairy", "Silver"],
+  ["Royal Tribute", "S", "Normal", "Rainbow"],
+  ["Rush Recklessly", "S", "Quick-Play", "Gold"],
+  ["Ryu-Kishin Clown", "M", "DARK", "Fiend", "Common"],
+  ["Saber Beetle", "M", "EARTH", "Insect", "Rainbow"],
+  ["Sabersaurus", "M", "EARTH", "Dinosaur", "Rainbow"],
+  ["Sacred Phoenix of Nephthys", "M", "FIRE", "Winged Beast", "Rainbow"],
+  ["Sage's Stone", "S", "Normal", "Gold"],
+  ["Sakuretsu Armor", "T", "Normal", "Rainbow"],
+  ["Salamandra", "S", "Equip", "Silver"],
+  ["Salvage", "S", "Normal", "Common"],
+  ["Sanga of the Thunder", "M", "LIGHT", "Thunder", "Rainbow"],
+  ["Sangan", "M", "DARK", "Fiend", "Rainbow"],
+  ["Sasuke Samurai", "M", "WIND", "Warrior", "Common"],
+  ["Sasuke Samurai #4", "M", "WIND", "Warrior", "Silver"],
+  ["Sauropod Brachion", "M", "EARTH", "Dinosaur", "Rainbow"],
+  ["Scapegoat", "S", "Quick-Play", "Rainbow"],
+  ["Scroll of Bewitchment", "S", "Equip", "Common"],
+  ["Second Coin Toss", "S", "Continuous", "Common"],
+  ["Secret Barrel", "T", "Normal", "Silver"],
+  ["Secret Pass to the Treasures", "S", "Normal", "Common"],
+  ["Self-Destruct Button", "T", "Normal", "Common"],
+  ["Sengenjin", "M", "EARTH", "Beast-Warrior", "Rainbow"],
+  ["Senju of the Thousand Hands", "M", "LIGHT", "Fairy", "Silver"],
+  ["Senri Eye", "S", "Continuous", "Common"],
+  ["Serial Spell", "S", "Quick-Play", "Gold"],
+  ["Seven Tools of the Bandit", "T", "Counter", "Rainbow"],
+  ["Shadow of Eyes", "T", "Normal", "Silver"],
+  ["Shadow Specter", "M", "DARK", "Zombie", "Common"],
+  ["Shadow Spell", "T", "Continuous", "Rainbow"],
+  ["Share the Pain", "S", "Normal", "Silver"],
+  ["Shield & Sword", "S", "Normal", "Silver"],
+  ["Shine Palace", "S", "Equip", "Silver"],
+  ["Shining Angel", "M", "LIGHT", "Fairy", "Silver"],
+  ["Shooting Star Bow - Ceal", "S", "Equip", "Gold"],
+  ["Shrink", "S", "Quick-Play", "Rainbow"],
+  ["Silent Doom", "S", "Normal", "Gold"],
+  ["Silent Magician LV4", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Silent Magician LV8", "M", "LIGHT", "Spellcaster", "Rainbow"],
+  ["Silent Swordsman LV3", "M", "LIGHT", "Warrior", "Common"],
+  ["Silent Swordsman LV5", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Silent Swordsman LV7", "M", "LIGHT", "Warrior", "Rainbow"],
+  ["Silver Bow and Arrow", "S", "Equip", "Common"],
+  ["Sinister Serpent", "M", "WATER", "Reptile", "Rainbow"],
+  ["Skilled Dark Magician", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Skilled White Magician", "M", "LIGHT", "Spellcaster", "Gold"],
+  ["Skull Archfiend of Lightning", "M", "DARK", "Fiend", "Rainbow"],
+  ["Skull Dice", "T", "Normal", "Common"],
+  ["Skull Lair", "T", "Continuous", "Common"],
+  ["Skull Servant", "M", "DARK", "Zombie", "Common"],
+  ["Slate Warrior", "M", "WIND", "Fiend", "Rainbow"],
+  ["Smashing Ground", "S", "Normal", "Rainbow"],
+  ["Smoke Grenade of the Thief", "S", "Equip", "Gold"],
+  ["Snake Fang", "T", "Normal", "Common"],
+  ["Snatch Steal", "S", "Equip", "Rainbow"],
+  ["Snipe Hunter", "M", "DARK", "Fiend", "Gold"],
+  ["Sogen", "S", "Field", "Common"],
+  ["Solar Flare Dragon", "M", "FIRE", "Pyro", "Silver"],
+  ["Solar Ray", "T", "Normal", "Common"],
+  ["Solemn Judgment", "T", "Counter", "Rainbow"],
+  ["Solemn Wishes", "T", "Continuous", "Common"],
+  ["Solomon's Lawbook", "T", "Normal", "Common"],
+  ["Sonic Bird", "M", "WIND", "Winged Beast", "Silver"],
+  ["Sonic Duck", "M", "WIND", "Winged Beast", "Gold"],
+  ["Soul Absorption", "S", "Continuous", "Common"],
+  ["Soul Demolition", "T", "Continuous", "Common"],
+  ["Soul Exchange", "S", "Normal", "Gold"],
+  ["Soul of the Pure", "S", "Normal", "Common"],
+  ["Soul Release", "S", "Normal", "Common"],
+  ["Soul Resurrection", "T", "Continuous", "Rainbow"],
+  ["Soul Reversal", "S", "Quick-Play", "Common"],
+  ["Soul Rope", "T", "Normal", "Gold"],
+  ["Soul Taker", "S", "Normal", "Rainbow"],
+  ["Sparks", "S", "Normal", "Common"],
+  ["Spear Cretin", "M", "DARK", "Fiend", "Common"],
+  ["Spear Dragon", "M", "WIND", "Dragon", "Gold"],
+  ["Special Hurricane", "S", "Normal", "Silver"],
+  ["Spell Absorption", "S", "Continuous", "Common"],
+  ["Spell Canceller", "M", "WIND", "Machine", "Gold"],
+  ["Spell Economics", "S", "Continuous", "Common"],
+  ["Spell Purification", "T", "Normal", "Common"],
+  ["Spell Reproduction", "S", "Normal", "Common"],
+  ["Spell Shattering Arrow", "S", "Quick-Play", "Silver"],
+  ["Spell Shield Type-8", "T", "Counter", "Gold"],
+  ["Spell Vanishing", "T", "Counter", "Common"],
+  ["Spellbinding Circle", "T", "Continuous", "Gold"],
+  ["Spellbook Organization", "S", "Quick-Play", "Common"],
+  ["Spiked Snail", "M", "DARK", "Insect", "Common"],
+  ["Spiral Spear Strike", "S", "Continuous", "Common"],
+  ["Spirit Barrier", "T", "Continuous", "Common"],
+  ["Spirit of the Breeze", "M", "WIND", "Fairy", "Gold"],
+  ["Spirit Shield", "T", "Continuous", "Silver"],
+  ["Spiritualism", "S", "Normal", "Common"],
+  ["Spring of Rebirth", "S", "Continuous", "Common"],
+  ["St. Joan", "M", "LIGHT", "Fairy", "Silver"],
+  ["Stamping Destruction", "S", "Normal", "Silver"],
+  ["Star Boy", "M", "WATER", "Aqua", "Common"],
+  ["Staunch Defender", "T", "Normal", "Silver"],
+  ["Steel Shell", "S", "Equip", "Common"],
+  ["Stim-Pack", "S", "Equip", "Gold"],
+  ["Stop Defense", "S", "Normal", "Common"],
+  ["Stray Lambs", "S", "Normal", "Silver"],
+  ["Stuffed Animal", "M", "EARTH", "Warrior", "Common"],
+  ["Stumbling", "S", "Continuous", "Silver"],
+  ["Summoned Skull", "M", "DARK", "Fiend", "Rainbow"],
+  ["Super Rejuvenation", "S", "Quick-Play", "Common"],
+  ["Supporter in the Shadows", "M", "EARTH", "Warrior", "Common"],
+  ["Swamp Battleguard", "M", "EARTH", "Warrior", "Silver"],
+  ["Sword of Dark Destruction", "S", "Equip", "Common"],
+  ["Sword of Deep-Seated", "S", "Equip", "Common"],
+  ["Sword of the Soul-Eater", "S", "Equip", "Common"],
+  ["Swords of Concealing Light", "S", "Continuous", "Gold"],
+  ["Swords of Revealing Light", "S", "Normal", "Rainbow"],
+  ["Tailor of the Fickle", "S", "Quick-Play", "Common"],
+  ["Taunt", "T", "Normal", "Common"],
+  ["Tenderness", "M", "LIGHT", "Fairy", "Common"],
+  ["Terraforming", "S", "Normal", "Common"],
+  ["Terrorking Salmon", "M", "WATER", "Fish", "Gold"],
+  ["Tethys, Goddess of Light", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["The 13th Grave", "M", "DARK", "Zombie", "Common"],
+  ["The A. Forces", "S", "Continuous", "Silver"],
+  ["The Agent of Creation - Venus", "M", "LIGHT", "Fairy", "Gold"],
+  ["The Agent of Force - Mars", "M", "LIGHT", "Fairy", "Common"],
+  ["The Agent of Judgment - Saturn", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["The Big March of Animals", "S", "Quick-Play", "Common"],
+  ["The Bistro Butcher", "M", "DARK", "Fiend", "Gold"],
+  ["The Cheerful Coffin", "S", "Normal", "Common"],
+  ["The Dark Door", "S", "Continuous", "Common"],
+  ["The Dragon's Bead", "T", "Continuous", "Gold"],
+  ["The Emperor's Holiday", "T", "Continuous", "Silver"],
+  ["The Flute of Summoning Dragon", "S", "Normal", "Silver"],
+  ["The Furious Sea King", "M", "WATER", "Aqua", "Common"],
+  ["The Inexperienced Spy", "S", "Normal", "Common"],
+  ["The Law of the Normal", "S", "Normal", "Silver"],
+  ["The Legendary Fisherman", "M", "WATER", "Warrior", "Gold"],
+  ["The Melting Red Shadow", "M", "WATER", "Aqua", "Common"],
+  ["The Puppet Magic of Dark Ruler", "S", "Normal", "Common"],
+  ["The Regulation of Tribe", "T", "Continuous", "Common"],
+  ["The Reliable Guardian", "S", "Quick-Play", "Common"],
+  ["The Rock Spirit", "M", "EARTH", "Rock", "Common"],
+  ["The Sanctuary in the Sky", "S", "Field", "Common"],
+  ["The Secret of the Bandit", "S", "Normal", "Common"],
+  ["The Shallow Grave", "S", "Normal", "Silver"],
+  ["The Snake Hair", "M", "DARK", "Zombie", "Silver"],
+  ["The Spell Absorbing Life", "T", "Normal", "Common"],
+  ["The Stern Mystic", "M", "LIGHT", "Spellcaster", "Silver"],
+  ["The Tricky", "M", "WIND", "Spellcaster", "Rainbow"],
+  ["The Unhappy Maiden", "M", "LIGHT", "Spellcaster", "Common"],
+  ["The Wandering Doomed", "M", "DARK", "Zombie", "Common"],
+  ["The Warrior Returning Alive", "S", "Normal", "Common"],
+  ["The Wicked Worm Beast", "M", "EARTH", "Beast", "Common"],
+  ["Thestalos the Firestorm Monarch", "M", "FIRE", "Pyro", "Rainbow"],
+  ["Thousand Dragon", "M", "WIND", "Dragon", "Silver"],
+  ["Thousand Energy", "S", "Normal", "Common"],
+  ["Thousand Knives", "S", "Normal", "Silver"],
+  ["Threatening Roar", "T", "Normal", "Rainbow"],
+  ["Thunder Crash", "S", "Normal", "Common"],
+  ["Thunder Dragon", "M", "LIGHT", "Thunder", "Silver"],
+  ["Thunder Nyan Nyan", "M", "LIGHT", "Thunder", "Gold"],
+  ["Thunder of Ruler", "T", "Normal", "Gold"],
+  ["Time Machine", "T", "Normal", "Rainbow"],
+  ["Time Seal", "T", "Normal", "Silver"],
+  ["Time Wizard", "M", "LIGHT", "Spellcaster", "Gold"],
+  ["Timeater", "M", "DARK", "Machine", "Gold"],
+  ["Timidity", "S", "Normal", "Common"],
+  ["Token Thanksgiving", "S", "Normal", "Common"],
+  ["Toll", "S", "Continuous", "Silver"],
+  ["Toon Alligator", "M", "WATER", "Reptile", "Silver"],
+  ["Toon Cannon Soldier", "M", "DARK", "Machine", "Silver"],
+  ["Toon Dark Magician Girl", "M", "DARK", "Spellcaster", "Gold"],
+  ["Toon Gemini Elf", "M", "EARTH", "Spellcaster", "Gold"],
+  ["Toon Masked Sorcerer", "M", "DARK", "Spellcaster", "Silver"],
+  ["Toon Table of Contents", "S", "Normal", "Silver"],
+  ["Toon World", "S", "Continuous", "Rainbow"],
+  ["Tornado Wall", "T", "Continuous", "Common"],
+  ["Torrential Tribute", "T", "Normal", "Rainbow"],
+  ["Tower of Babel", "T", "Continuous", "Common"],
+  ["Tragedy", "T", "Normal", "Gold"],
+  ["Trap Dustshoot", "T", "Normal", "Gold"],
+  ["Trap Hole", "T", "Normal", "Rainbow"],
+  ["Trap Hole of Spikes", "T", "Normal", "Gold"],
+  ["Trap Jammer", "T", "Counter", "Gold"],
+  ["Trap of Board Eraser", "T", "Counter", "Gold"],
+  ["Tremendous Fire", "S", "Normal", "Common"],
+  ["Triangle Ecstasy Spark", "S", "Normal", "Silver"],
+  ["Triangle Power", "S", "Normal", "Common"],
+  ["Tribe-Infecting Virus", "M", "WATER", "Aqua", "Rainbow"],
+  ["Tribute Doll", "S", "Normal", "Gold"],
+  ["Tribute to the Doomed", "S", "Normal", "Gold"],
+  ["Tricky Spell 4", "S", "Quick-Play", "Common"],
+  ["Tsukuyomi", "M", "DARK", "Spellcaster", "Common"],
+  ["Turu-Purun", "M", "WATER", "Aqua", "Common"],
+  ["Tutan Mask", "T", "Counter", "Silver"],
+  ["Twin Swords of Flashing Light - Tryce", "S", "Equip", "Silver"],
+  ["Twin-Barrel Dragon", "M", "DARK", "Machine", "Gold"],
+  ["Twin-Headed Behemoth", "M", "WIND", "Dragon", "Silver"],
+  ["Twin-Headed Thunder Dragon", "M", "LIGHT", "Thunder", "Gold"],
+  ["Two-Man Cell Battle", "S", "Continuous", "Common"],
+  ["Two-Mouth Darkruler", "M", "EARTH", "Dinosaur", "Common"],
+  ["Two-Pronged Attack", "T", "Normal", "Common"],
+  ["Tyhone", "M", "WIND", "Winged Beast", "Common"],
+  ["Tyhone #2", "M", "FIRE", "Dragon", "Silver"],
+  ["Type Zero Magic Crusher", "T", "Continuous", "Common"],
+  ["Tyranno Infinity", "M", "EARTH", "Dinosaur", "Common"],
+  ["UFO Turtle", "M", "FIRE", "Machine", "Common"],
+  ["Ultimate Baseball Kid", "M", "FIRE", "Warrior", "Silver"],
+  ["Ultimate Insect LV1", "M", "WIND", "Insect", "Common"],
+  ["Ultimate Insect LV3", "M", "WIND", "Insect", "Silver"],
+  ["Ultimate Insect LV5", "M", "WIND", "Insect", "Gold"],
+  ["Ultimate Insect LV7", "M", "WIND", "Insect", "Rainbow"],
+  ["Ultra Evolution Pill", "S", "Normal", "Silver"],
+  ["Umi", "S", "Field", "Common"],
+  ["Umiiruka", "S", "Field", "Common"],
+  ["United We Stand", "S", "Equip", "Rainbow"],
+  ["Unshaven Angler", "M", "WATER", "Fish", "Silver"],
+  ["Upstart Goblin", "S", "Normal", "Gold"],
+  ["Valkyrion the Magna Warrior", "M", "EARTH", "Rock", "Common"],
+  ["Vampire Lord", "M", "DARK", "Zombie", "Rainbow"],
+  ["Vengeful Bog Spirit", "S", "Continuous", "Silver"],
+  ["Vile Germs", "S", "Equip", "Common"],
+  ["Violet Crystal", "S", "Equip", "Common"],
+  ["Waboku", "T", "Normal", "Rainbow"],
+  ["Wall of Illusion", "M", "DARK", "Fiend", "Gold"],
+  ["Warrior Dai Grepher", "M", "EARTH", "Warrior", "Gold"],
+  ["Warrior Elimination", "S", "Normal", "Silver"],
+  ["Warrior Lady of the Wasteland", "M", "EARTH", "Warrior", "Silver"],
+  ["Wasteland", "S", "Field", "Common"],
+  ["Wattkid", "M", "LIGHT", "Thunder", "Common"],
+  ["Wave-Motion Cannon", "S", "Continuous", "Rainbow"],
+  ["Weapon Change", "S", "Continuous", "Common"],
+  ["Weather Control", "M", "LIGHT", "Fairy", "Common"],
+  ["Whirlwind Prodigy", "M", "WIND", "Fairy", "Silver"],
+  ["White Hole", "T", "Normal", "Common"],
+  ["White Magician Pikeru", "M", "LIGHT", "Spellcaster", "Silver"],
+  ["White-Horned Dragon", "M", "DARK", "Dragon", "Rainbow"],
+  ["Wicked-Breaking Flamberge - Baou", "S", "Equip", "Common"],
+  ["Widespread Ruin", "T", "Normal", "Rainbow"],
+  ["Wild Nature's Release", "S", "Normal", "Common"],
+  ["Windstorm of Etaqua", "T", "Normal", "Gold"],
+  ["Wing Egg Elf", "M", "LIGHT", "Fairy", "Common"],
+  ["Winged Dragon, Guardian of the Fortress #1", "M", "WIND", "Dragon", "Common"],
+  ["Winged Dragon, Guardian of the Fortress #2", "M", "WIND", "Winged Beast", "Common"],
+  ["Winged Egg of New Life", "M", "LIGHT", "Fairy", "Common"],
+  ["Winged Kuriboh", "M", "LIGHT", "Fairy", "Common"],
+  ["Winged Rhynos", "M", "WIND", "Beast-Warrior", "Gold"],
+  ["Winged Sage Falcos", "M", "WIND", "Winged Beast", "Gold"],
+  ["Wingweaver", "M", "LIGHT", "Fairy", "Rainbow"],
+  ["Witch of the Black Forest", "M", "DARK", "Spellcaster", "Rainbow"],
+  ["Wood Remains", "M", "DARK", "Zombie", "Common"],
+  ["Woodland Sprite", "M", "EARTH", "Plant", "Common"],
+  ["World Suppression", "T", "Normal", "Common"],
+  ["Wow Warrior", "M", "WATER", "Fish", "Common"],
+  ["Wretched Ghost of the Attic", "M", "DARK", "Fiend", "Common"],
+  ["Wynn the Wind Charmer", "M", "WIND", "Spellcaster", "Silver"],
+  ["X-Head Cannon", "M", "LIGHT", "Machine", "Gold"],
+  ["Xing Zhen Hu", "T", "Continuous", "Gold"],
+  ["Y-Dragon Head", "M", "LIGHT", "Machine", "Silver"],
+  ["Yamatano Dragon Scroll", "M", "WIND", "Dragon", "Common"],
+  ["Yami", "S", "Field", "Common"],
+  ["Yellow Gadget", "M", "EARTH", "Machine", "Silver"],
+  ["Yellow Luster Shield", "S", "Continuous", "Common"],
+  ["Z-Metal Tank", "M", "LIGHT", "Machine", "Silver"],
+  ["Zaborg the Thunder Monarch", "M", "LIGHT", "Thunder", "Rainbow"],
+  ["Zera Ritual", "S", "Ritual", "Silver"],
+  ["Zera the Mant", "M", "DARK", "Fiend", "Gold"],
+  ["Zero Gravity", "T", "Normal", "Gold"],
+  ["Zolga", "M", "EARTH", "Fairy", "Gold"],
+  ["Zoma the Spirit", "T", "Continuous", "Gold"],
+  ["Zombie Master", "M", "DARK", "Zombie", "Rainbow"],
+  ["Monster Reborn", "S", "Normal", "Rainbow"],
+  ["Gravekeeper's Visionary", "M", "DARK", "Spellcaster", "Gold"],
+  ["Amazoness Sage", "M", "EARTH", "Warrior", "Unknown"],
+  ["Amazoness Trainee", "M", "EARTH", "Warrior", "Unknown"],
+  ["Babycerasaurus", "M", "EARTH", "Dinosaur", "Unknown"],
+  ["Batteryman Charger", "M", "LIGHT", "Thunder", "Unknown"],
+  ["Beast King Barbaros", "M", "EARTH", "Beast-Warrior", "Unknown"],
+  ["Brain Crusher", "M", "DARK", "Insect", "Unknown"],
+  ["Frenzied Panda", "M", "EARTH", "Beast", "Unknown"],
+  ["Fusilier Dragon, the Dual-Mode Beast", "M", "DARK", "Machine", "Unknown"],
+  ["Giant Rex", "M", "EARTH", "Dinosaur", "Unknown"],
+  ["Gravekeeper's Assailant", "M", "DARK", "Spellcaster", "Unknown"],
+  ["Gravekeeper's Guard", "M", "DARK", "Spellcaster", "Unknown"],
+  ["Gyaku-Gire Panda", "M", "EARTH", "Beast", "Unknown"],
+  ["Kuraz the Light Monarch", "M", "LIGHT", "Warrior", "Unknown"],
+  ["Maji-Gire Panda", "M", "EARTH", "Beast", "Unknown"],
+  ["Rescue Cat", "M", "EARTH", "Beast", "Unknown"],
+  ["Nova Summoner", "M", "LIGHT", "Fairy", "Unknown"],
+  ["Royal Magical Library", "M", "LIGHT", "Spellcaster", "Unknown"],
+  ["Sasuke Samurai #2", "M", "WIND", "Warrior", "Unknown"],
+  ["Sasuke Samurai #3", "M", "LIGHT", "Warrior", "Unknown"],
+  ["Venom Cobra", "M", "EARTH", "Reptile", "Unknown"],
+  ["Advanced Ritual Art", "S", "Ritual", "Unknown"],
+  ["Bonfire", "S", "Normal", "Unknown"],
+  ["Cards from the Sky", "S", "Normal", "Unknown"],
+  ["D.D.R. - Different Dimension Reincarnation", "S", "Equip", "Unknown"],
+  ["Dark Burning Attack", "S", "Normal", "Unknown"],
+  ["Fire Formation - Tenki", "S", "Continuous", "Unknown"],
+  ["Fires of Doomsday", "S", "Quick-Play", "Unknown"],
+  ["Forbidden Chalice", "S", "Quick-Play", "Unknown"],
+  ["Fossil Dig", "S", "Normal", "Unknown"],
+  ["Level Copy", "S", "Continuous", "Unknown"],
+  ["Majesty of Fire", "S", "Normal", "Unknown"],
+  ["Moray of Greed", "S", "Normal", "Unknown"],
+  ["Shield Crush", "S", "Normal", "Unknown"],
+  ["Twister", "S", "Quick-Play", "Unknown"],
+  ["Valhalla, Hall of the Fallen", "S", "Continuous", "Unknown"],
+  ["Birthright", "T", "Continuous", "Unknown"],
+  ["Black Illusion", "T", "Normal", "Unknown"],
+  ["Fossil Excavation", "T", "Continuous", "Unknown"],
+  ["Fusion Reserve", "T", "Normal", "Unknown"],
+  ["Horn of the Phantom Beast", "T", "Normal", "Unknown"],
+  ["Hysteric Party", "T", "Continuous", "Unknown"],
+  ["Icarus Attack", "T", "Normal", "Unknown"],
+  ["Lair Wire", "T", "Normal", "Unknown"],
+  ["Level Soul", "T", "Normal", "Unknown"],
+  ["Miraculous Descent", "T", "Continuous", "Unknown"],
+  ["Return from the Different Dimension", "T", "Normal", "Unknown"],
+  ["Spiritual Earth Art - Kurogane", "T", "Normal", "Unknown"],
+  ["Spiritual Fire Art - Kurenai", "T", "Normal", "Unknown"],
+  ["Spiritual Water Art - Aoi", "T", "Normal", "Unknown"],
+  ["Spiritual Wind Art - Miyabi", "T", "Normal", "Unknown"],
+  ["The Huge Revolution is Over", "T", "Counter", "Unknown"],
+  ["Judgment of Thunder", "T", "Normal", "Unknown"]
+].map((r) => r[1] === "M"
+  ? { name: r[0], type: "Monster", attribute: r[2], monsterType: r[3], rarity: r[4], price: DMO_PRICES[r[0]] ?? "" }
+  : { name: r[0], type: r[1] === "S" ? "Spell" : "Trap", spellTrapType: r[2], rarity: r[3], price: DMO_PRICES[r[0]] ?? "" }
+);
+
+/* ---------------- chargement ---------------- */
+function loadCards(rawList, label) {
+  const arr = extractArray(rawList) || rawList;
+  if (!Array.isArray(arr) || !arr.length) throw new Error("Aucune carte trouvée dans ces données.");
+  CARDS = arr.map(normalize);
+  BY_ID = new Map(CARDS.map((c) => [c.id, c]));
+  buildFilterOptions();
+  applyFilters();
+  refreshDeck();
+  cacheCards();
+  toast(t("cardsLoaded", CARDS.length) + (label ? " — " + label : ""));
+  return CARDS.length;
+}
+
+function buildFilterOptions() {
+  const cats = new Set(), rars = new Set(), attrs = new Set(), subs = new Set();
+  for (const c of CARDS) {
+    if (c.cat) cats.add(c.cat);
+    if (c.rarity && c.rarity !== "—") rars.add(c.rarity);
+    if (c.attribute) attrs.add(c.attribute);
+    if (c.subType) subs.add(c.subType);
+    if (c.monsterType) subs.add(c.monsterType);
+  }
+  const fill = (sel, set, all) => {
+    const cur = sel.value;
+    sel.innerHTML = "";
+    sel.append(new Option(all, "all"));
+    [...set].sort().forEach((v) => sel.append(new Option(v, v)));
+    sel.value = set.has(cur) ? cur : "all";
+  };
+  fill($("#fType"), cats, t("allTypes"));
+  fill($("#fRarity"), rars, t("allRar"));
+  fill($("#fAttr"), attrs, t("allAttr"));
+  fill($("#fSub"), subs, t("allSub"));
+}
+
+/* ---------------- filtres ---------------- */
+function applyFilters() {
+  const q = $("#q").value.trim().toLowerCase();
+  const ty = $("#fType").value, ra = $("#fRarity").value, so = $("#fSort").value;
+
+  const at = $("#fAttr").value, sb = $("#fSub").value;
+
+  filtered = CARDS.filter((c) =>
+    (!q || c._s.includes(q)) &&
+    (ty === "all" || c.cat === ty) &&
+    (ra === "all" || c.rarity === ra) &&
+    (at === "all" || c.attribute === at) &&
+    (sb === "all" || c.subType === sb || c.monsterType === sb)
+  );
+
+  const cmp = {
+    "name": (a, b) => a.name.localeCompare(b.name),
+    "name-desc": (a, b) => b.name.localeCompare(a.name),
+    "type": (a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name),
+    "level": (a, b) => b.level - a.level || a.name.localeCompare(b.name),
+    "price": (a, b) => priceOf(b) - priceOf(a) || a.name.localeCompare(b.name),
+    "price-asc": (a, b) => priceOf(a) - priceOf(b) || a.name.localeCompare(b.name)
+  }[so];
+  filtered.sort(cmp);
+
+  $("#poolCount").textContent = filtered.length + " / " + CARDS.length;
+  rendered = 0;
+  $("#pool").innerHTML = "";
+  renderMore();
+}
+
+function renderMore() {
+  const pool = $("#pool");
+  const slice = filtered.slice(rendered, rendered + PAGE);
+  const frag = document.createDocumentFragment();
+  for (const c of slice) frag.append(makeTile(c, "pool"));
+  pool.append(frag);
+  rendered += slice.length;
+}
+
+$("#pool").addEventListener("scroll", (e) => {
+  const n = e.target;
+  if (rendered < filtered.length && n.scrollTop + n.clientHeight > n.scrollHeight - 300) renderMore();
+});
+
+/* ---------------- tuiles ---------------- */
+function makeTile(card, origin, idx) {
+  const t = el("div", "tile" + (card.dark ? " dark" : ""));
+  t.style.setProperty("--fc", card.color);
+  t.dataset.id = card.id;
+  t.dataset.origin = origin;
+  if (idx !== undefined) t.dataset.idx = idx;
+  t.title = card.name;
+  t.draggable = true;
+
+  /* Le visuel vit dans .thumb : il remplit la tuile en grille et devient
+     une miniature de 34px en table, sans toucher au reste du contenu. */
+  const thumb = el("div", "thumb");
+  if (card.img) {
+    const img = new Image();
+    img.src = card.img;
+    img.alt = card.name;
+    img.loading = "lazy";
+    img.onerror = () => { img.remove(); thumb.append(fallback(card)); };
+    thumb.append(img);
+  } else {
+    thumb.append(fallback(card));
+  }
+  t.append(thumb);
+
+  if (origin === "pool") {
+    const row = el("div", "rowinfo");
+
+    const nm = el("span", "r-name");
+    nm.textContent = card.name;
+
+    const ty = el("span", "r-type");
+    ty.textContent = card.cat;
+    const sub = card.monsterType || card.subType;
+    if (sub) { const e = el("em"); e.textContent = sub; ty.append(e); }
+
+    const ra = el("span", "r-rar");
+    if (card.rarity && card.rarity !== "—") {
+      const pill = el("span", "pill r-" + card.rarity.toLowerCase().replace(/[^a-z]/g, ""));
+      pill.textContent = card.rarity;
+      ra.append(pill);
+    }
+
+    const pr = el("span", "r-price");
+    pr.textContent = priceOf(card) ? fmtG(priceOf(card)) : "—";
+
+    row.append(nm, ty, ra, pr);
+    t.append(row);
+
+    const n = copies(card.id);
+    if (n > 0) {
+      const q = el("span", "qty");
+      q.textContent = "×" + n;
+      t.append(q);
+      if (n >= MAX_COPIES) t.classList.add("maxed");
+    }
+  }
+  return t;
+}
+
+function fallback(card) {
+  const f = el("div", "fallback");
+  f.textContent = card.name;
+  return f;
+}
+
+const copies = (id) =>
+  deck.main.filter((x) => x === id).length +
+  deck.extra.filter((x) => x === id).length +
+  deck.side.filter((x) => x === id).length;
+
+/* ---------------- deck ops ---------------- */
+function addCard(id, forceZone) {
+  const c = BY_ID.get(id);
+  if (!c) return;
+  const zone = forceZone || (c.isExtra ? "extra" : "main");
+  if (copies(id) >= MAX_COPIES) return toast(t("maxCopies", MAX_COPIES, c.name));
+  if (deck[zone].length >= LIMITS[zone]) return toast(t("zoneFull", zone.toUpperCase(), LIMITS[zone]));
+  deck[zone].push(id);
+  refreshDeck(id);
+}
+
+function removeAt(zone, idx) {
+  const id = deck[zone][idx];
+  deck[zone].splice(idx, 1);
+  refreshDeck();
+  return id;
+}
+
+function moveCard(fromZone, idx, toZone) {
+  const id = deck[fromZone][idx];
+  const c = BY_ID.get(id);
+  if (!c) return;
+  if (toZone === "main" && c.isExtra) return toast(t("noExtraInMain"));
+  if (toZone === "extra" && !c.isExtra) return toast(t("onlyExtra"));
+  if (fromZone === toZone) return;
+  if (deck[toZone].length >= LIMITS[toZone]) return toast(t("zoneFull", toZone.toUpperCase(), LIMITS[toZone]));
+  deck[fromZone].splice(idx, 1);
+  deck[toZone].push(id);
+  refreshDeck(id);
+}
+
+function sortZone(zone) {
+  deck[zone].sort((a, b) => {
+    const x = BY_ID.get(a), y = BY_ID.get(b);
+    if (!x || !y) return 0;
+    const rank = (c) => (/trap|piège/i.test(c.type) ? 2 : /spell|magic/i.test(c.type) ? 1 : 0);
+    return rank(x) - rank(y) || y.level - x.level || x.name.localeCompare(y.name);
+  });
+}
+
+/* ---------------- rendu deck ---------------- */
+function refreshDeck(popId) {
+  for (const zone of ["main", "extra", "side"]) {
+    sortZone(zone);
+    const box = $("#z" + zone[0].toUpperCase() + zone.slice(1));
+    box.innerHTML = "";
+    if (!deck[zone].length) {
+      const e = el("div", "empty");
+      e.style.gridColumn = "1/-1";
+      e.textContent = zone === "main" ? t("emptyMain") : zone === "extra" ? t("emptyExtra") : t("emptySide");
+      box.append(e);
+    } else {
+      const frag = document.createDocumentFragment();
+      deck[zone].forEach((id, i) => {
+        const c = BY_ID.get(id);
+        if (!c) return;
+        const t = makeTile(c, zone, i);
+        if (id === popId) t.classList.add("pop");
+        frag.append(t);
+      });
+      box.append(frag);
+    }
+    updateZoneHead(zone);
+  }
+  updateGauge();
+  refreshPoolQty();
+  try { store.set("dmo_deck", JSON.stringify({ name: $("#deckName").value, deck })); } catch (e) {}
+}
+
+/* ---------------- prix ---------------- */
+
+const priceOf = (c) => {
+  const n = Number(String(c?.price ?? "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+
+const fmtG = (n) => n.toLocaleString("fr-FR") + " G";
+
+function zoneCost(zone) {
+  let total = 0, unknown = 0;
+  for (const id of deck[zone]) {
+    const c = BY_ID.get(id);
+    if (!c) continue;
+    const p = priceOf(c);
+    if (p > 0) total += p; else unknown++;
+  }
+  return { total, unknown };
+}
+
+function updateZoneHead(zone) {
+  const n = deck[zone].length;
+  const cap = LIMITS[zone];
+  const numEl = $("#n" + zone[0].toUpperCase() + zone.slice(1));
+  const barEl = $("#b" + zone[0].toUpperCase() + zone.slice(1));
+  const bad = zone === "main" ? (n > 0 && (n < 40 || n > 60)) : n > cap;
+  numEl.textContent = zone === "main" ? n + " / 40–60" : n + " / " + cap;
+  numEl.classList.toggle("bad", bad);
+  barEl.style.width = Math.min(100, (n / cap) * 100) + "%";
+  barEl.classList.toggle("bad", bad);
+
+  const Z = zone[0].toUpperCase() + zone.slice(1);
+  const costEl = $("#c" + Z);
+  const { total, unknown } = zoneCost(zone);
+  costEl.innerHTML = n
+    ? fmtG(total) + (unknown ? ' <span>+' + unknown + " sans prix</span>" : "")
+    : "";
+}
+
+function updateGauge() {
+  const n = deck.main.length;
+  const g = $("#gMain");
+  g.querySelector("strong").textContent = n + " / 40";
+  g.classList.toggle("good", n >= 40 && n <= 60);
+  g.classList.toggle("bad", n > 0 && n < 40);
+
+  let mon = 0, spl = 0, trp = 0;
+  for (const id of deck.main) {
+    const c = BY_ID.get(id);
+    if (!c) continue;
+    if (/trap|piège/i.test(c.type)) trp++;
+    else if (/spell|magic/i.test(c.type)) spl++;
+    else mon++;
+  }
+  $("#gMon strong").textContent = mon;
+  $("#gSpl strong").textContent = spl;
+  $("#gTrp strong").textContent = trp;
+
+  let grand = 0, unknown = 0;
+  for (const zone of ["main", "extra", "side"]) {
+    const z = zoneCost(zone);
+    grand += z.total;
+    unknown += z.unknown;
+  }
+  const gc = $("#gCost");
+  gc.querySelector("strong").textContent = fmtG(grand);
+  gc.querySelector("em").textContent = unknown ? t("costWithUnknown", unknown) : t("cost");
+  gc.title = unknown ? t("costTipUnknown", unknown) : t("costTip");
+
+  $("#deckCount").textContent = (deck.main.length + deck.extra.length + deck.side.length) + " " + t("cards");
+}
+
+function refreshPoolQty() {
+  for (const t of $("#pool").children) {
+    const n = copies(t.dataset.id);
+    let q = t.querySelector(".qty");
+    if (n > 0) {
+      if (!q) { q = el("span", "qty"); t.append(q); }
+      q.textContent = "×" + n;
+    } else if (q) q.remove();
+    t.classList.toggle("maxed", n >= MAX_COPIES);
+  }
+}
+
+/* ---------------- inspecteur ---------------- */
+let inspected = null;
+
+function inspect(card) {
+  inspected = card;
+  const box = $("#inspect");
+  box.innerHTML = "";
+
+  const prev = el("div", "ipreview");
+  if (card.imgBig || card.img) {
+    const img = new Image();
+    img.src = card.imgBig || card.img;
+    img.alt = card.name;
+    img.onerror = () => { img.remove(); prev.append(bigFallback(card)); };
+    prev.append(img);
+  } else prev.append(bigFallback(card));
+  box.append(prev);
+
+  const nm = el("div", "iname");
+  nm.textContent = card.name;
+  box.append(nm);
+
+  const meta = el("div", "imeta");
+  meta.textContent = [
+    card.type,
+    card.attribute,
+    card.level ? t("lvl") + " " + card.level : "",
+    card.rarity !== "—" ? card.rarity : "",
+    card.price !== "" ? card.price + " G" : ""
+  ].filter(Boolean).join(" · ");
+  box.append(meta);
+
+  if (card.atk !== "" || card.def !== "") {
+    const st = el("div", "istats");
+    st.innerHTML = `<span>ATK ${card.atk || "—"}</span><span>DEF ${card.def || "—"}</span>`;
+    box.append(st);
+  }
+
+  const acts = el("div", "iacts");
+  const add = el("button", "btn gold");
+  add.textContent = t("add");
+  add.onclick = () => addCard(card.id);
+  const side = el("button", "btn");
+  side.textContent = t("toSide");
+  side.onclick = () => addCard(card.id, "side");
+  acts.append(add, side);
+  box.append(acts);
+
+  if (card.desc) {
+    const d = el("div", "idesc");
+    d.textContent = card.desc;
+    box.append(d);
+  }
+}
+
+function bigFallback(card) {
+  const f = el("div", "fallback");
+  f.style.background = `linear-gradient(160deg, ${card.color}, rgba(0,0,0,.45))`;
+  f.style.color = card.dark ? "#E6E0D2" : "#1A1208";
+  f.textContent = card.name;
+  return f;
+}
+
+/* ---------------- interactions ---------------- */
+function tileCard(t) { return BY_ID.get(t.dataset.id); }
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest(".tile");
+  if (!t) return;
+  const c = tileCard(t);
+  if (!c) return;
+  if (coarse) { inspect(c); return; }
+  if (t.dataset.origin === "pool") addCard(c.id);
+  else removeAt(t.dataset.origin, Number(t.dataset.idx));
+});
+
+document.addEventListener("dblclick", (e) => {
+  const t = e.target.closest(".tile");
+  if (!t || !coarse) return;
+  const c = tileCard(t);
+  if (!c) return;
+  if (t.dataset.origin === "pool") addCard(c.id);
+  else removeAt(t.dataset.origin, Number(t.dataset.idx));
+});
+
+document.addEventListener("contextmenu", (e) => {
+  const t = e.target.closest(".tile");
+  if (!t) return;
+  e.preventDefault();
+  const c = tileCard(t);
+  if (!c) return;
+  if (t.dataset.origin !== "pool") removeAt(t.dataset.origin, Number(t.dataset.idx));
+  else inspect(c);
+});
+
+document.addEventListener("mouseover", (e) => {
+  const t = e.target.closest(".tile");
+  if (!t || coarse) return;
+  const c = tileCard(t);
+  if (c && c !== inspected) inspect(c);
+});
+
+/* drag & drop */
+let drag = null;
+document.addEventListener("dragstart", (e) => {
+  const t = e.target.closest(".tile");
+  if (!t) return;
+  drag = { id: t.dataset.id, origin: t.dataset.origin, idx: Number(t.dataset.idx) };
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", t.dataset.id); } catch (err) {}
+});
+document.addEventListener("dragend", () => {
+  drag = null;
+  document.querySelectorAll(".dropzone.over").forEach((z) => z.classList.remove("over"));
+});
+for (const z of document.querySelectorAll(".dropzone")) {
+  z.addEventListener("dragover", (e) => { e.preventDefault(); z.classList.add("over"); });
+  z.addEventListener("dragleave", () => z.classList.remove("over"));
+  z.addEventListener("drop", (e) => {
+    e.preventDefault();
+    z.classList.remove("over");
+    if (!drag) return;
+    const to = z.dataset.zone;
+    if (drag.origin === "pool") addCard(drag.id, to === "extra" || to === "main" ? undefined : to);
+    else moveCard(drag.origin, drag.idx, to);
+    drag = null;
+  });
+}
+
+/* ---------------- toast ---------------- */
+let toastT;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ---------------- deck list / save ---------------- */
+/* ---------------- partage par lien ----------------
+   Le deck est encodé DANS l'URL : aucun stockage serveur.
+   On référence chaque carte par sa position dans le catalogue. */
+
+function cardOrdinal() {
+  const m = new Map();
+  CARDS.forEach((c, i) => m.set(c.id, i));
+  return m;
+}
+
+function encodeDeck() {
+  const ord = cardOrdinal();
+  const zone = (arr) => {
+    const counts = new Map();
+    for (const id of arr) counts.set(id, (counts.get(id) || 0) + 1);
+    return [...counts]
+      .map(([id, n]) => (ord.has(id) ? ord.get(id) + (n > 1 ? "x" + n : "") : ""))
+      .filter(Boolean).join(".");
+  };
+  const body = [zone(deck.main), zone(deck.extra), zone(deck.side)].join("~");
+  const name = encodeURIComponent($("#deckName").value.trim() || "Deck");
+  return "#d=" + name + "|" + body;
+}
+
+function decodeDeck(hash) {
+  try {
+    const m = hash.match(/#d=([^|]*)\|(.*)$/);
+    if (!m) return null;
+    const name = decodeURIComponent(m[1]);
+    const zones = m[2].split("~");
+    const parse = (str) => {
+      const out = [];
+      if (!str) return out;
+      for (const tok of str.split(".")) {
+        const [idx, n] = tok.split("x");
+        const card = CARDS[Number(idx)];
+        if (!card) continue;
+        for (let k = 0; k < (Number(n) || 1); k++) out.push(card.id);
+      }
+      return out;
+    };
+    return { name, deck: { main: parse(zones[0]), extra: parse(zones[1]), side: parse(zones[2]) } };
+  } catch (e) { return null; }
+}
+
+$("#btnShare").onclick = async () => {
+  if (!deck.main.length && !deck.extra.length && !deck.side.length)
+    return toast(t("addFirst"));
+
+  const code = encodeDeck();
+  // location.origin vaut "null" en file:// ; on retombe sur href.
+  const base = (location.origin && location.origin !== "null")
+    ? location.origin + location.pathname
+    : location.href.split("#")[0];
+  const link = base + code;
+
+  try {
+    await navigator.clipboard.writeText(link);
+    toast(t("linkCopied"));
+  } catch (e) {
+    prompt(t("copyPrompt"), link);
+  }
+};
+
+$("#btnClear").onclick = () => {
+  if (!confirm(t("clearConfirm"))) return;
+  deck = { main: [], extra: [], side: [] };
+  refreshDeck();
+};
+
+/* ---------------- panneau données ---------------- */
+const veil = $("#veil");
+const setStatus = (msg, cls) => { const s = $("#dataStatus"); s.textContent = msg; s.className = "status " + (cls || ""); };
+
+$("#btnData").onclick = () => { veil.hidden = false; };
+/* Panneau d'administration masqué : Ctrl+Maj+A pour l'ouvrir. */
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
+    e.preventDefault();
+    veil.hidden = false;
+    $("#btnData").hidden = false;
+  }
+});
+$("#closeData").onclick = () => { veil.hidden = true; };
+veil.addEventListener("click", (e) => { if (e.target === veil) veil.hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") veil.hidden = true; });
+
+$("#btnFetch").onclick = async () => {
+  const url = $("#apiUrl").value.trim();
+  if (!url) return setStatus("Renseigne une URL.", "err");
+  setStatus("Chargement…");
+  try {
+    const r = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const n = loadCards(await r.json(), "API");
+    store.set("dmo_api", url);
+    setStatus(n + " cartes importées.", "ok");
+    setTimeout(() => { veil.hidden = true; }, 700);
+  } catch (err) {
+    setStatus("Échec : " + err.message + ". Si c'est une erreur CORS ou réseau, utilise la méthode 2 ou 3.", "err");
+  }
+};
+
+$("#btnPaste").onclick = () => {
+  const raw = $("#pasteJson").value.trim();
+  if (!raw) return setStatus("Colle d'abord du JSON.", "err");
+  try {
+    const n = loadCards(JSON.parse(raw), "JSON collé");
+    setStatus(n + " cartes importées.", "ok");
+    setTimeout(() => { veil.hidden = true; }, 700);
+  } catch (err) { setStatus("JSON invalide : " + err.message, "err"); }
+};
+
+$("#btnFile").onclick = () => $("#fileIn").click();
+$("#fileIn").onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const n = loadCards(JSON.parse(rd.result), f.name);
+      setStatus(n + " cartes importées.", "ok");
+      setTimeout(() => { veil.hidden = true; }, 700);
+    } catch (err) { setStatus("Fichier illisible : " + err.message, "err"); }
+  };
+  rd.readAsText(f);
+};
+
+/* ---------------- cache ---------------- */
+/* localStorage plafonne vers 5 Mo : on ne remet pas les textes d'effet,
+   ils seront re-téléchargés si besoin. */
+function cacheCards() {
+  try {
+    const slim = CARDS.map((c) => ({
+      name: c.name, type: c.type, cat: c.cat, subType: c.subType,
+      monsterType: c.monsterType, rarity: c.rarity, price: c.price,
+      attribute: c.attribute, level: c.level, atk: c.atk, def: c.def,
+      img: c.img, imgBig: c.imgBig, desc: c.desc,
+      frame: c.frame, color: c.color, dark: c.dark, isExtra: c.isExtra
+    }));
+    store.set("dmo_cards", JSON.stringify(slim));
+  } catch (e) { /* quota dépassé : on repart du catalogue au prochain lancement */ }
+}
+
+/* ---------------- enrichissement YGOPRODeck ---------------- */
+/* DMO reprend le pool officiel : on complète chaque carte par son nom. */
+
+const keyOf = (s) => String(s).toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+
+async function enrich(quiet) {
+  if (!CARDS.length) { setStatus("Importe d'abord une liste de cartes.", "err"); return false; }
+
+  /* On interroge par lots de noms plutôt que de télécharger toute la base :
+     une cinquantaine de requêtes légères au lieu d'une de plusieurs dizaines de Mo. */
+  const BATCH = 40;
+  const todo = CARDS.filter((c) => !c.img);
+  if (!todo.length) { setStatus("Toutes les cartes sont déjà complètes.", "ok"); return true; }
+
+  const index = new Map();
+  let done = 0, failed = 0;
+
+  for (let i = 0; i < todo.length; i += BATCH) {
+    const slice = todo.slice(i, i + BATCH);
+    const url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?name="
+      + encodeURIComponent(slice.map((c) => c.name).join("|"));
+
+    try {
+      const r = await fetch(url);
+      const j = await r.json();
+      /* L'API renvoie une erreur si UN seul nom du lot est inconnu : on
+         retombe alors sur des requêtes unitaires pour ce lot. */
+      if (Array.isArray(j.data)) {
+        for (const m of j.data) index.set(keyOf(m.name), m);
+      } else {
+        for (const c of slice) {
+          try {
+            const r2 = await fetch("https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + encodeURIComponent(c.name));
+            const j2 = await r2.json();
+            if (Array.isArray(j2.data)) index.set(keyOf(j2.data[0].name), j2.data[0]);
+          } catch (e) { /* carte introuvable : on la laisse telle quelle */ }
+        }
+      }
+    } catch (err) { failed++; }
+
+    done += slice.length;
+    const pct = Math.round((done / todo.length) * 100);
+    setStatus("Récupération des visuels… " + pct + "%");
+    if (quiet) $("#poolCount").textContent = "visuels " + pct + "%";
+    await new Promise((res) => setTimeout(res, 60)); // 20 req/s max côté API
+  }
+
+  if (!index.size) {
+    setStatus("Aucune donnée récupérée. Vérifie ta connexion.", "err");
+    if (quiet) { applyFilters(); toast(t("visualsFail")); }
+    return false;
+  }
+
+  const missing = [];
+  for (const c of CARDS) {
+    const m = index.get(keyOf(c.name));
+    if (!m) { if (!c.img) missing.push(c.name); continue; }
+
+    const art = m.card_images?.[0] || {};
+    c.img    = art.image_url_small || art.image_url || c.img;
+    c.imgBig = art.image_url || c.imgBig;
+    c.desc   = m.desc || c.desc;
+    c.level  = Number(m.level ?? m.linkval ?? 0) || 0;
+    c.atk    = m.atk ?? "";
+    c.def    = m.def ?? "";
+    c.attribute = m.attribute || c.attribute;
+    c.monsterType = m.race || c.monsterType;
+    c.type   = m.race ? m.type + " / " + m.race : m.type;
+
+    /* Le cadre se déduit du type officiel, jamais de la race :
+       sinon une Magie Rituelle passerait en cadre bleu. */
+    const f = frameOf(m.type);
+    c.frame = f.key; c.color = f.color; c.dark = f.dark;
+    c.isExtra = EXTRA_RE.test(m.type);
+  }
+
+  const hit = CARDS.length - missing.length;
+  buildFilterOptions();
+  applyFilters();
+  refreshDeck();
+  cacheCards();
+
+  if (missing.length) console.warn("[DMO] Sans correspondance :", missing);
+  setStatus(hit + " / " + CARDS.length + " cartes complétées"
+    + (missing.length ? " · " + missing.length + " introuvables (console F12)" : ""), "ok");
+  toast(t("completed", hit));
+  return true;
+}
+
+$("#btnEnrich").onclick = () => enrich(false);
+
+/* ---------------- fusion des prix ---------------- */
+/* Le flux de prix est indépendant du catalogue : on l'applique par-dessus. */
+
+function mergePrices(payload) {
+  const list = extractArray(payload) || payload;
+  if (!Array.isArray(list) || !list.length) throw new Error("Aucune entrée exploitable.");
+
+  const byName = new Map();
+  for (const c of CARDS) byName.set(keyOf(c.name), c);
+
+  let hit = 0;
+  const unmatched = [];
+  for (const row of list) {
+    const label = row.cardName ?? row.name ?? row._id ?? "";
+    const c = byName.get(keyOf(label));
+    if (!c) { unmatched.push(label); continue; }
+    const p = row.price ?? row.avgPrice ?? row.averagePrice;
+    if (p !== undefined && p !== null && p !== "") { c.price = p; hit++; }
+    if (row.rarity && (!c.rarity || c.rarity === "—")) c.rarity = row.rarity;
+  }
+
+  buildFilterOptions();
+  applyFilters();
+  refreshDeck();
+  cacheCards();
+
+  if (unmatched.length) console.warn("[DMO] Prix sans carte correspondante :", unmatched);
+  const priced = CARDS.filter((c) => priceOf(c) > 0).length;
+  setStatus(hit + " prix mis à jour · " + priced + " / " + CARDS.length + " cartes valorisées"
+    + (unmatched.length ? " · " + unmatched.length + " entrées ignorées (console F12)" : ""), "ok");
+  toast(hit + " prix mis à jour");
+}
+
+$("#btnPriceUrl").onclick = async () => {
+  const url = $("#priceUrl").value.trim();
+  if (!url) return setStatus("Renseigne l'URL du flux de prix.", "err");
+  setStatus("Chargement des prix…");
+  try {
+    const r = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    mergePrices(await r.json());
+    store.set("dmo_price_api", url);
+  } catch (err) {
+    setStatus("Échec : " + err.message + ". Si c'est du CORS, colle le JSON à la place.", "err");
+  }
+};
+
+$("#btnPricePaste").onclick = () => {
+  const raw = $("#pricePaste").value.trim();
+  if (!raw) return setStatus("Colle d'abord le JSON des prix.", "err");
+  try { mergePrices(JSON.parse(raw)); }
+  catch (err) { setStatus("Échec : " + err.message, "err"); }
+};
+
+/* ---------------- prix via proxy ---------------- */
+/* On n'appelle jamais DMO directement (CORS) : tout passe par le proxy,
+   dont l'URL est saisie dans le panneau. Le proxy relaie /api/*. */
+
+/* Proxy de prix — déployé sur Render. Modifie cette ligne si l'URL change. */
+const PROXY_URL = "https://dmo-price-proxy.onrender.com";
+const proxyBase = () => {
+  const override = ($("#proxyUrl")?.value || "").trim();
+  return (override || PROXY_URL).replace(/\/+$/, "");
+};
+
+/* Endpoints connus du market, essayés dans l'ordre pour un chargement global. */
+const PRICE_FEEDS = ["/api/recent", "/api/hottest", "/api/listings", "/api/market", "/api/get"];
+
+/* Cherche un prix dans une réponse de forme inconnue. */
+function extractPrice(data) {
+  if (data == null) return null;
+  if (typeof data === "number") return data;
+  if (typeof data === "string") { const n = Number(data.replace(/[^\d.]/g, "")); return n || null; }
+  if (Array.isArray(data)) {
+    const nums = data.map((r) => Number(r?.price ?? r?.amount ?? r)).filter((n) => n > 0);
+    if (!nums.length) return null;
+    return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+  }
+  for (const k of ["average", "avg", "averagePrice", "avgPrice", "average_price",
+                   "marketPrice", "price", "median", "lowest", "min"]) {
+    const v = data[k];
+    if (typeof v === "number" && v > 0) return v;
+    if (typeof v === "string" && Number(v) > 0) return Number(v);
+  }
+  for (const k of ["listings", "sales", "recentSales", "data", "results", "cards"]) {
+    if (Array.isArray(data[k])) { const p = extractPrice(data[k]); if (p) return p; }
+  }
+  return null;
+}
+
+/* Applique une liste d'annonces {cardName/name, price} au catalogue. */
+function applyPriceRows(rows) {
+  if (!Array.isArray(rows)) return 0;
+  const byName = new Map(CARDS.map((c) => [keyOf(c.name), c]));
+  let hit = 0;
+  for (const row of rows) {
+    const label = row.cardName ?? row.name ?? row._id ?? "";
+    const c = byName.get(keyOf(label));
+    const p = row.price ?? row.avgPrice ?? row.average;
+    if (c && p != null && p !== "") { c.price = p; hit++; }
+  }
+  return hit;
+}
+
+async function proxyGet(path) {
+  const base = proxyBase();
+  if (!base) throw new Error("proxy non configuré");
+  const r = await fetch(base + path, { headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+$("#btnPriceTest").onclick = async () => {
+  if (!proxyBase()) return setStatus("Renseigne l'URL de ton proxy.", "err");
+  setStatus("Test du proxy…");
+  try {
+    const j = await proxyGet("/api/recent");
+    const rows = Array.isArray(j) ? j : (j.data || j.cards || []);
+    setStatus("Proxy OK — " + (rows.length || 0) + " entrées reçues via /api/recent. "
+      + "Tu peux lancer le chargement complet.", "ok");
+    console.log("[DMO] /api/recent →", j);
+  } catch (err) {
+    setStatus("Échec : " + err.message + ". Vérifie l'URL, et que le service Render est bien réveillé "
+      + "(le premier appel peut prendre ~1 min).", "err");
+  }
+};
+
+$("#btnPriceAll").onclick = async () => {
+  if (!proxyBase()) return setStatus("Renseigne l'URL de ton proxy.", "err");
+  store.set("dmo_proxy", proxyBase());
+  const btn = $("#btnPriceAll");
+  btn.disabled = true;
+
+  let total = 0;
+  setStatus("Récupération des prix…");
+  for (const feed of PRICE_FEEDS) {
+    try {
+      const j = await proxyGet(feed);
+      const rows = Array.isArray(j) ? j : (j.data || j.cards || j.listings || j.results || []);
+      const hit = applyPriceRows(rows);
+      if (hit) { total += hit; setStatus("Prix : " + CARDS.filter((c) => priceOf(c) > 0).length + " cartes valorisées"); }
+    } catch (e) { /* endpoint absent : on passe au suivant */ }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+
+  applyFilters(); refreshDeck(); cacheCards();
+  const priced = CARDS.filter((c) => priceOf(c) > 0).length;
+  setStatus(priced + " / " + CARDS.length + " cartes valorisées."
+    + (priced <= 60 ? " Le marché n'expose peut-être que les cartes récemment échangées." : ""),
+    priced ? "ok" : "err");
+  toast(priced + " cartes valorisées");
+  btn.disabled = false;
+};
+
+/* Rafraîchit les prix sans bloquer l'affichage. */
+async function loadPricesQuietly() {
+  if (!proxyBase()) return;
+  let total = 0;
+  for (const feed of PRICE_FEEDS) {
+    try {
+      const j = await proxyGet(feed);
+      const rows = Array.isArray(j) ? j : (j.data || j.cards || j.listings || j.results || []);
+      total += applyPriceRows(rows);
+    } catch (e) { /* endpoint absent ou service endormi */ }
+  }
+  if (total) { applyFilters(); refreshDeck(); cacheCards(); }
+}
+
+/* ---------------- galerie publique (Supabase) ---------------- */
+/* Supabase expose une API REST directe, appelable depuis le navigateur
+   sans CORS. Les clés anon sont publiques par conception ; c'est la
+   row-level security côté base qui protège les données. */
+
+const SUPABASE_URL = "https://mwxvnhsgkmjcjqcoilxt.supabase.co"; // Project URL intégré
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13eHZuaHNna21qY2pxY29pbHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MTk0NDksImV4cCI6MjEwNDE5NTQ0OX0.BbCTTEOL7fuICHhEVE3u0ocSxyZ7SrVyWv0CsDcZBGI"; // clé anon (publique par conception)
+
+const sbUrl = () => (($("#sbUrl")?.value || "").trim() || SUPABASE_URL).replace(/\/+$/, "");
+const sbKey = () => ($("#sbKey")?.value || "").trim() || SUPABASE_KEY;
+const sbReady = () => sbUrl() && sbKey();
+
+function sbHeaders() {
+  return { apikey: sbKey(), Authorization: "Bearer " + sbKey(), "Content-Type": "application/json" };
+}
+
+$("#sbSave").onclick = () => {
+  if (!sbReady()) return setStatus("Renseigne l'URL et la clé.", "err");
+  store.set("dmo_sb_url", sbUrl());
+  store.set("dmo_sb_key", sbKey());
+  setStatus("Connexion galerie enregistrée.", "ok");
+};
+
+async function publishDeck() {
+  if (!sbReady()) return toast(t("galleryOff"));
+  const total = deck.main.length + deck.extra.length + deck.side.length;
+  if (!total) return toast(t("pubFirst"));
+
+  const author = (prompt(t("pseudoPrompt"), "") || "Anonyme").slice(0, 40);
+  const row = {
+    name: ($("#deckName").value.trim() || "Deck").slice(0, 60),
+    author: author.trim() || "Anonyme",
+    code: encodeDeck().replace(/^#d=/, ""),
+    main_count: deck.main.length,
+  };
+  try {
+    const r = await fetch(sbUrl() + "/rest/v1/decks", {
+      method: "POST",
+      headers: { ...sbHeaders(), Prefer: "return=minimal" },
+      body: JSON.stringify(row),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    toast(t("published"));
+  } catch (e) {
+    toast(t("pubFail") + e.message);
+  }
+}
+
+/* calcule les stats d'un deck à partir de son code encodé */
+function deckStats(code) {
+  const parsed = decodeDeck("#d=" + code);
+  if (!parsed) return null;
+  const d = parsed.deck;
+  let mon = 0, spl = 0, trp = 0, cost = 0;
+  const all = [...d.main, ...d.extra, ...d.side];
+  for (const id of all) {
+    const c = BY_ID.get(id);
+    if (!c) continue;
+    if (/trap|piège/i.test(c.type)) trp++;
+    else if (/spell|magic/i.test(c.type)) spl++;
+    else mon++;
+    cost += priceOf(c);
+  }
+  return { parsed, total: all.length, main: d.main.length,
+           extra: d.extra.length, side: d.side.length, mon, spl, trp, cost };
+}
+
+let GAL_ROWS = [];
+
+function renderGallery(filter) {
+  const list = $("#galList");
+  const q = (filter || "").trim().toLowerCase();
+  const rows = q
+    ? GAL_ROWS.filter((d) => (d.name + " " + (d.author || "")).toLowerCase().includes(q))
+    : GAL_ROWS;
+
+  if (!rows.length) {
+    list.innerHTML = '<div class="galempty">' + t("galEmpty") + '</div>';
+    return;
+  }
+  list.innerHTML = "";
+  for (const d of rows) {
+    const st = deckStats(d.code);
+    const card = el("div", "deckcard");
+
+    const stat = (cls, val, label) =>
+      '<div class="dc-stat ' + cls + '"><b>' + val + '</b><em>' + label + '</em></div>';
+
+    const statsHtml = st
+      ? stat("", st.total, t("cards").toUpperCase())
+        + stat("mon", st.mon, t("monsters").toUpperCase().slice(0, 3))
+        + stat("spl", st.spl, t("spells").toUpperCase().slice(0, 3))
+        + stat("trp", st.trp, t("traps").toUpperCase().slice(0, 3))
+        + (st.cost ? stat("cost", fmtG(st.cost).replace(/\s?G$/, ""), "G") : "")
+      : '<div style="font-size:12px;color:#6E6180">' + t("unreadable") + '</div>';
+
+    card.innerHTML =
+      '<div class="dc-name">' + escapeHtml(d.name) + '</div>'
+      + '<div class="dc-author">' + (LANG === "fr" ? "par " : "by ") + escapeHtml(d.author || "Anonyme") + '</div>'
+      + '<div class="dc-stats">' + statsHtml + '</div>'
+      + '<div class="dc-load">' + t("load") + '</div>';
+
+    card.onclick = () => {
+      const parsed = st ? st.parsed : decodeDeck("#d=" + d.code);
+      if (!parsed) return toast(t("unreadable"));
+      deck = parsed.deck;
+      $("#deckName").value = parsed.name || d.name;
+      refreshDeck();
+      closeGallery();
+      toast(t("loaded", d.name));
+    };
+    list.append(card);
+  }
+}
+
+function closeGallery() { $("#galPage").hidden = true; }
+
+async function openGallery() {
+  const page = $("#galPage");
+  page.hidden = false;
+  const list = $("#galList");
+  if (!sbReady()) {
+    list.innerHTML = '<div class="galempty" style="color:#C0453C">' + t("galleryOff") + '</div>';
+    return;
+  }
+  list.innerHTML = '<div class="galempty">' + t("loading") + '</div>';
+  try {
+    const r = await fetch(
+      sbUrl() + "/rest/v1/decks?select=*&order=created_at.desc&limit=200",
+      { headers: sbHeaders() }
+    );
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    GAL_ROWS = await r.json();
+    renderGallery($("#galSearch").value);
+  } catch (e) {
+    list.innerHTML = '<div class="galempty" style="color:#C0453C">' + t("galErr") + e.message + '</div>';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+$("#btnPublish").onclick = publishDeck;
+$("#btnGallery").onclick = openGallery;
+$("#galBack").onclick = closeGallery;
+$("#galSearch").addEventListener("input", (e) => renderGallery(e.target.value));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeGallery(); });
+
+/* ---------------- filtres live ---------------- *//* ---------------- filtres live ---------------- */
+function setView(table) {
+  $("#pool").classList.toggle("table", table);
+  $("#poolHead").classList.toggle("on", table);
+  $("#btnView").innerHTML = table ? t("viewGrid") : t("viewTable");
+  store.set("dmo_view", table ? "table" : "grid");
+}
+$("#btnView").onclick = () => {
+  setView(!$("#pool").classList.contains("table"));
+  $("#pool").scrollTop = 0;
+};
+
+let qT;
+$("#q").addEventListener("input", () => { clearTimeout(qT); qT = setTimeout(applyFilters, 140); });
+["#fType", "#fRarity", "#fAttr", "#fSub", "#fSort"].forEach((s) => $(s).addEventListener("change", applyFilters));
+
+/* ---------------- boot ---------------- */
+(async function boot() {
+  const savedLang = localStorage.getItem("dmo_lang");
+  applyLang(savedLang || ((navigator.language || "en").slice(0, 2) === "fr" ? "fr" : "en"));
+  const dn = $("#deckName");
+  if (dn.value === "Deck sans nom") dn.value = t("deckName");
+  const savedApi = store.get("dmo_api");
+  if (savedApi) $("#apiUrl").value = savedApi;
+  const savedPriceApi = store.get("dmo_price_api");
+  if (savedPriceApi) $("#priceUrl").value = savedPriceApi;
+  setView(store.get("dmo_view") === "table"); // grille par défaut
+  const savedProxy = store.get("dmo_proxy");
+  if (savedProxy && $("#proxyUrl")) $("#proxyUrl").value = savedProxy;
+  loadPricesQuietly(); // prix en direct via le proxy intégré
+
+  const su = store.get("dmo_sb_url"), sk = store.get("dmo_sb_key");
+  if (su && $("#sbUrl")) $("#sbUrl").value = su;
+  if (sk && $("#sbKey")) $("#sbKey").value = sk;
+
+  let loaded = false;
+  const cached = store.get("dmo_cards");
+  if (cached) {
+    try { loadCards(JSON.parse(cached), "cache"); loaded = true; } catch (e) {}
+  }
+  if (!loaded) loadCards(DMO_SEED, "catalogue DMO");
+
+  /* On relance la récupération tant qu'il reste des cartes sans visuel :
+     un premier passage interrompu ne doit pas geler l'affichage. */
+  if (CARDS.some((c) => !c.img)) await enrich(true);
+
+  /* Priorité au deck passé dans le lien ; sinon on restaure le brouillon local. */
+  const shared = location.hash.startsWith("#d=") ? decodeDeck(location.hash) : null;
+  if (shared) {
+    deck = shared.deck;
+    $("#deckName").value = shared.name;
+    refreshDeck();
+    toast(t("sharedOpened"));
+    history.replaceState(null, "", location.pathname); // nettoie l'URL
+  } else {
+    const savedDeck = store.get("dmo_deck");
+    if (savedDeck) {
+      try {
+        const p = JSON.parse(savedDeck);
+        if (p.deck) { deck = p.deck; $("#deckName").value = p.name || "Deck sans nom"; refreshDeck(); }
+      } catch (e) {}
+    }
+  }
+})();
+</script>
+</body>
+</html>
